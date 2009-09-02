@@ -59,15 +59,18 @@
       }
 
       public function init():void {
-        bc.data = getTimeline(10, 1);
+        bc.data = getTimeline(10, 10
+        );
         
         bc2.data = getTimeline(10, 3);
-        bc.extraOperators = [new PropertyEncoder({size: 0.7}, Data.NODES), 
-                             new PropertyEncoder({arrowType: ArrowType.NONE, shape: Shapes.LINE, lineWidth: 2.0, lineColor: 0x99aaaaaa}, Data.EDGES),     
-                             new PropertyEncoder({arrowType: ArrowType.TRIANGLE, shape: Shapes.LINE, lineWidth: 4.0, lineColor: 0x99ff0000}, Data.EDGES, function(d:DataSprite):Boolean {
-                              var e:EdgeSprite = d as EdgeSprite;
-                              return e.target.data['count'] < e.source.data['count']
-                             })];
+        bc.extraOperators = [new PropertyEncoder({visible: false}, Data.NODES),
+                            new PropertyEncoder({lineWidth: 3}, Data.EDGES)];
+//        bc.extraOperators = [new PropertyEncoder({size: 0.7}, Data.NODES), 
+//                             new PropertyEncoder({arrowType: ArrowType.NONE, shape: Shapes.LINE, lineWidth: 2.0, lineColor: 0x99aaaaaa}, Data.EDGES),     
+//                             new PropertyEncoder({arrowType: ArrowType.TRIANGLE, shape: Shapes.LINE, lineWidth: 4.0, lineColor: 0x99ff0000}, Data.EDGES, function(d:DataSprite):Boolean {
+//                              var e:EdgeSprite = d as EdgeSprite;
+//                              return e.target.data['count'] < e.source.data['count']
+//                             })];
         
         var legend:Legend = Legend.fromValues("Legend Title", [
 	    {color: 0xff0000, shape:Shapes.X, label:"Red X"},
@@ -113,9 +116,10 @@
                       height="300"
                       backgroundColor="#ffffff" 
                       categoryEncodingField="val"
-                      valueEncodingField="count" colorEncodingField="val"
+                      valueEncodingField="count" 
+                      colorEncodingField="series"
                       valueAxisMaximum="{slider.value}"
-                      palette="{ColorPalette.getPaletteByName('hot').darken()}" linePalette="spectral" lineColorEncodingField="count"
+                      palette="Blues" linePalette="Blues" lineColorEncodingField="series"
                       transitionPeriod="NaN"/>
       
     </mx:HBox>

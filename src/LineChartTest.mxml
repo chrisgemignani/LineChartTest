@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+                layout="absolute"
+                xmlns:local="*"
+                xmlns:charts="org.juicekit.charts.*"
+                initialize="init()"
+                xmlns:controls="org.juicekit.visual.controls.*">
+  <mx:Script>
+    <![CDATA[
+      import mx.core.UIComponent;
+      import mx.core.IUIComponent;
+      import flare.vis.legend.Legend;
+      import flare.vis.data.render.ArrowType;
+      import flare.util.Strings;
+      import flare.vis.controls.PanZoomControl;
+      import org.juicekit.flare.util.palette.ColorPalette;
+      import flare.vis.operator.encoder.SizeEncoder;
+      import flare.util.Shapes;
+      import flare.vis.data.DataSprite;
+      import flare.vis.data.EdgeSprite;
+      import flare.vis.operator.encoder.PropertyEncoder;
+      import flare.util.Maths;
+      import flare.vis.data.Data;
+      
+
+      public function getTimeline(N:int, M:int):Data {
+        var MAX:Number = 60;
+        var t0:Date = new Date(1979, 5, 15);
+        var t1:Date = new Date(1982, 2, 19);
+        var x:Number, f:Number;
+
+        var data:Data = new Data();
+        for (var j:uint = 0; j < M; ++j) {
+          for (var i:uint = 0; i < N; ++i) {
+            f = i / (N - 1);
+            x = t0.time + f * (t1.time - t0.time);
+            data.addNode({series: int(j), val: int(f*100), date: new Date(x), count: int((j * MAX / M) + MAX / M * (1 + Maths.noise(13 * f, j)))});
+          }
+        }
+        // create timeline edges connecting items sorted by date
+        // and grouped by series
+			data.createEdges("data.date", "data.series");
+			data.edges.visit(function(d:DataSprite):void {
+			  var e:EdgeSprite = d as EdgeSprite;
+			  //e.shape = Shapes.BEZIER;
+			  e.shape = Shapes.LINE;
+//			  e.visible = false;
+//			  e.alpha = 0.0;
+			  e.lineWidth = 1.0;
+//			  e.lineColor = 0xffff0000;
+			});
+			
+			data.nodes.visit(function(d:DataSprite):void {
+			  trace(d.data.series, d.data.date, d.data.count);
+			});
+
+
+        return data;
+      }
+
+      public function init():void {
+        bc.data = getTimeline(10, 1);
+        
+        bc2.data = getTimeline(10, 3);
+        bc.extraOperators = [new PropertyEncoder({size: 0.7}, Data.NODES), 
+                             new PropertyEncoder({arrowType: ArrowType.NONE, shape: Shapes.LINE, lineWidth: 2.0, lineColor: 0x99aaaaaa}, Data.EDGES),     
+                             new PropertyEncoder({arrowType: ArrowType.TRIANGLE, shape: Shapes.LINE, lineWidth: 4.0, lineColor: 0x99ff0000}, Data.EDGES, function(d:DataSprite):Boolean {
+                              var e:EdgeSprite = d as EdgeSprite;
+                              return e.target.data['count'] < e.source.data['count']
+                             })];
+        
+        var legend:Legend = Legend.fromValues("Legend Title", [
+	    {color: 0xff0000, shape:Shapes.X, label:"Red X"},
+	   {color: 0x00ff00, shape:Shapes.SQUARE, label:"Green Square"},
+	    {color: 0x0000ff, shape:Shapes.CIRCLE, label:"Blue Circle"}
+	  ]);
+	  
+	  
+	  //hboxy.addChild(legend as UIComponent);
+	  	  
+//	  hboxy.rawChildren.addChild(legend);
+//	  hboxy.rawChildren.addChild(legend);
+        
+//        new PropertyEncoder({arrowType: ArrowType.TRIANGLE, shape: Shapes.LINE, lineWidth: 4.0}, Data.EDGES)];        
+      }
+      
+      private function traceIt():void {
+        debug.text = '';
+        debug.text = bc.vis.operators.length + '\n\n';
+  			bc.data.nodes.visit(function(d:DataSprite):void {
+          debug.text += Strings.format('NODE: {0} {1} {2} {3:X}\n', d.data.series, ' ', d.data.count, d.fillColor);
+  			});
+  			bc.data.edges.visit(function(d:DataSprite):void {
+          debug.text += Strings.format('EDGE: {0} {1} {2} {3:X}\n', d.data.series, ' ', d.data.count, d.lineColor);
+  			});
+  			bc.colorPalette.length = 10; 
+  			hboxy.addChild(Legend.fromScale('howdydoody', bc.categoryAxis.axisScale, bc.colorPalette));
+//        var legend:Legend = Legend.fromValues("Legend Title", [
+//    	    {color: 0xff0000, shape:Shapes.X, label:"Red X"},
+//    	    {color: 0x00ff00, shape:Shapes.SQUARE, label:"Green Square"},
+//    	    {color: 0x0000ff, shape:Shapes.CIRCLE, label:"Blue Circle"}
+//    	  ]);
+//    	  hboxy.addChild(legend);
+      }  
+      
+    ]]>
+  </mx:Script>
+  <controls:StylerInstance/>
+  <mx:VBox id="vbox" paddingLeft="100" paddingRight="100" paddingTop="100">
+    <mx:HBox id="hboxy">
+    <local:LLineChart id="bc"
+                      width="600"
+                      height="300"
+                      backgroundColor="#ffffff" 
+                      categoryEncodingField="val"
+                      valueEncodingField="count" colorEncodingField="val"
+                      valueAxisMaximum="{slider.value}"
+                      palette="{ColorPalette.getPaletteByName('hot').darken()}" linePalette="spectral" lineColorEncodingField="count"
+                      transitionPeriod="NaN"/>
+      
+    </mx:HBox>
+    <mx:Spacer height="20"/>                    
+    <charts:ColumnChart id="bc2"
+                        width="300"
+                        height="300"
+                        backgroundColor="#ddffff"
+                        categoryEncodingField="val"
+                        valueEncodingField="count" palette="blue"
+                        valueAxisMaximum="{slider.value}"
+                        paddingTop="1"/>
+
+  </mx:VBox>
+  <mx:HBox>
+    
+    <mx:HSlider id="slider"
+                width="200"
+                minimum="0"
+                maximum="400"
+                value="200"/>
+     <mx:Button click="traceIt()" label="trace"/>
+  </mx:HBox>
+  <mx:Text id="debug" width="400" x="450" y="20" height="100%"/>
+</mx:Application>

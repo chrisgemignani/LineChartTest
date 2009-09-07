@@ -1,17 +1,10 @@
 package  {
-  import flare.animate.Transitioner;
-  import flare.display.TextSprite;
   import flare.scale.ScaleType;
-  import flare.util.Maths;
-  import flare.vis.controls.DragControl;
+  import flare.util.Shapes;
   import flare.vis.data.Data;
-  import flare.vis.data.NodeSprite;
-  import flare.vis.operator.OperatorList;
-  import flare.vis.operator.OperatorSwitch;
   import flare.vis.operator.encoder.ColorEncoder;
   import flare.vis.operator.encoder.PropertyEncoder;
   import flare.vis.operator.layout.AxisLayout;
-  import flare.vis.operator.layout.ForceDirectedLayout;
   
   import flash.text.TextFormat;
   
@@ -51,6 +44,18 @@ package  {
       }
     }
     
+    private function colorPaletteChanged(e:PropertyChangeEvent):void {
+      if (e.property == 'markerPalette') {
+        markerColorPalette = ColorPalette.fromHeuristic(e.newValue);
+        markerColorEncoder.palette = markerColorPalette;
+      }
+      if (e.property == 'linePalette') {
+        lineColorPalette = ColorPalette.fromHeuristic(e.newValue);
+        lineColorEncoder.palette = lineColorPalette;
+      }
+    }
+    
+    
     
     /**
     * A proxy for Flare properties. The key is the
@@ -64,17 +69,39 @@ package  {
       'fontWeight': textFormatChanged,
       'fontFamily': textFormatChanged,
       'fontStyle': textFormatChanged,
+      
+      'markerPalette': colorPaletteChanged,
+      'linePalette': colorPaletteChanged, 
+
+      'markerColorField': 'markerColorEncoder.source',
+      'lineColorField': 'lineColorEncoder.source',
+
+      'markerSize': 'nodePropertyEncoder.values.size',
+      'markerAlpha': 'nodePropertyEncoder.values.alpha',
+      'markerShape': 'nodePropertyEncoder.values.shape',
+      'borderWidth': 'nodePropertyEncoder.values.lineWidth',
+      'borderColor': 'nodePropertyEncoder.values.lineColor',
+      'lineWidth': 'edgePropertyEncoder.values.lineWidth',
+      'stacked': 'axisLayout.yStacked',
+      
+      'valueMax': 'vis.xyAxes.yAxis.axisScale.preferredMax',
+      'valueMin': 'vis.xyAxes.yAxis.axisScale.preferredMin',
+      'zeroBased': 'vis.xyAxes.yAxis.axisScale.baseAtZero',
+      'valueAxisReverse': 'vis.xyAxes.yReverse',      
       'valueAxisShowLines': 'vis.xyAxes.yAxis.showLines',
       'valueAxisShowLabels': 'vis.xyAxes.yAxis.showLabels',
+      'valueAxisLabelFormat': 'vis.xyAxes.yAxis.labelFormat',
+      
+      'categoryAxisReverse': 'vis.xyAxes.xReverse',      
       'categoryAxisShowLines': 'vis.xyAxes.xAxis.showLines',
-      'categoryAxisShowLabels': 'vis.xyAxes.xAxis.showLabels',
-      'valueAxisLabelFormat': 'vis.xyAxes.yAxis.labelFormat'      
+      'categoryAxisShowLabels': 'vis.xyAxes.xAxis.showLabels'
     }
+
 
     //------------------------
     // fonts
     //------------------------
-
+    
     public var fontSize:Number = 10;
     public var fontFamily:String = 'Arial';
     public var fontColor:String = '#333333';
@@ -86,23 +113,64 @@ package  {
     // axes
     //------------------------
     
+    public var zeroBased:Boolean = false;
     public var valueAxisShowLines:Boolean = true;
     public var valueAxisShowLabels:Boolean = true;
+    public var valueAxisLabelFormat:String = '0';
+    public var valueAxis:Boolean = true;
+    public var valueMax:Number = 100;
+    public var valueMin:Number = 100;
+    public var valueAxisReverse:Boolean = false;
     public var categoryAxisShowLines:Boolean = true;
     public var categoryAxisShowLabels:Boolean = true;
-    public var valueAxisLabelFormat:String = '0';
+    public var categoryAxisReverse:Boolean = false;
 
 
+    public var colorEncodingField:String = 'color';
+    
+    public var markerPalette:* = 'spectral';
+    public var linePalette:* = 'spectral';
+
+
+    //------------------------
+    // markers
+    //------------------------
+
+    public var valueEncodingField:String = 'data.count';
+    public var categoryEncodingField:String = 'data.date';
+    public var markerColorField:String = 'data.series';
+    public var markerSize:Number = 1.0;
+    public var markerAlpha:Number = 1.0;
+    public var lineColorField:String = 'source.data.series';
+    public var lineWidth:Number = 2.0;
+    public var borderWidth:Number = 1.0;
+    public var borderColor:uint = 0x333333;
+    public var masterAlpha:Number = 1.0;
+    public var markerShape:String = Shapes.CIRCLE;
+    public var stacked:Boolean = false;
+    
+    public var lineColorPalette:ColorPalette = ColorPalette.fromHeuristic('#999999');
+    public var markerColorPalette:ColorPalette = ColorPalette.getPaletteByName('spectral');
+    
     //------------------------
     // encoders
     //------------------------
 
-    public var axisLayout:AxisLayout = new AxisLayout("data.date", "data.count");
+    public var axisLayout:AxisLayout = new AxisLayout(categoryEncodingField, valueEncodingField);
     public var lineColorEncoder:ColorEncoder = new ColorEncoder(lineColorField, Data.EDGES, "lineColor", ScaleType.LINEAR, lineColorPalette);
     public var markerColorEncoder:ColorEncoder = new ColorEncoder(markerColorField, Data.NODES, "fillColor", ScaleType.LINEAR, markerColorPalette);
-    public var nodePropertyEncoder:PropertyEncoder = new PropertyEncoder({lineAlpha: 1.0, alpha: markerAlpha, buttonMode: false, scaleX: 1, scaleY: 1, size: markerSize, lineColor: borderColor, lineWidth: borderWidth});
-    public var edgePropertyEncoder:PropertyEncoder = new PropertyEncoder({lineWidth: lineWidth, lineAlpha: 1.0}, Data.EDGES);
-
+    public var nodePropertyEncoder:PropertyEncoder = new PropertyEncoder(
+      {lineAlpha: 1.0, 
+       alpha: markerAlpha, 
+       //shape: markerShape,
+       size: markerSize, 
+       lineColor: borderColor, 
+       lineWidth: borderWidth
+       }, Data.NODES);
+    public var edgePropertyEncoder:PropertyEncoder = new PropertyEncoder(
+      {lineWidth: lineWidth, 
+       lineAlpha: 1.0
+       }, Data.EDGES);
 
   }
 }

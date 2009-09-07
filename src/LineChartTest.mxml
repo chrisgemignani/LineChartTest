@@ -42,7 +42,6 @@
     <mx:HBox id="hboxy" width="100%" height="100%">
       <mx:VBox verticalGap="-4" width="50%">
         <mx:Button label="Mark" click="hi.markerColorField = 'data.date'; hi.lineColorField = 'target.data.date'"/>
-        <mx:Button label="bad" click="hi.bad()"/>
         <mx:Spacer height="20"/>
         <mx:Label text="a"/>
         <mx:HSlider id="slider"
@@ -62,7 +61,7 @@
         <mx:HSlider id="fontsizeslider"
                     width="100"
                     minimum="8"
-                    maximum="16"
+                    maximum="24"
                     value="12"/>
         <mx:Spacer height="20"/>
         <mx:Label text="linewidth"/>
@@ -92,6 +91,7 @@
         <mx:Button label="change data" click="hi.data = FlareLineChart.getTimeline(40,4)"/>
         <mx:Button label="extraops" click="hi.extraOperators = [new PropertyEncoder({fillColor: 0xffff0000}, 'nodes')]"/>
         <mx:Button label="remove extraops" click="hi.extraOperators = []"/>
+        <mx:Button label="marker" click="hi.markerShape=Shapes.CROSS"/>
 
 
       </mx:VBox>
@@ -100,10 +100,10 @@
                                         width="500"
                                         height="400"
                                         backgroundColor="#ffffff"
-                                        fontColor="#663333"
-                                        fontWeight="bold"
+                                        fontColor="#663333" valueMin="0"
+                                        fontWeight="bold" stacked="false"
                                         masterAlpha="{ma.value}"
-                                        yMax="{slider.value}"
+                                        valueMax="{slider.value}"                                        
                                         transitionPeriod="0.5"
                                         markerSize="{slider.value/100}"
                                         markerAlpha="{alphaslider.value}"

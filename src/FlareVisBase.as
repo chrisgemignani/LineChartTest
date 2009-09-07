@@ -95,18 +95,6 @@ package  {
 
 
 
-    /**
-    * Called whenever a source data collection changes.
-    * 
-    * Simply resets the entire data for the visualization to the 
-    * data in the ArrayCollection. 
-    * 
-    * TODO: optimize
-    */
-    private function updateDataFromAC(event:CollectionEvent):void {
-      data = event.target;
-    }
-    
     
     /** 
     * <p>Add operators to <code>vis.operators</code>.</p>
@@ -156,7 +144,20 @@ package  {
     public var baseControls:Array = [];
     public var extraControls:Array = [];
     
-
+    
+    /**
+    * Called whenever a source data collection changes.
+    * 
+    * Simply resets the entire data for the visualization to the 
+    * data in the ArrayCollection. 
+    * 
+    * TODO: optimize
+    */
+    private function updateDataFromAC(event:CollectionEvent):void {
+      data = event.target;
+    }
+    
+    
     /**
      * Sets the data value to a <code>Data</code> data
      * object used for rendering position and color
@@ -164,30 +165,50 @@ package  {
      *
      * @see flare.vis.data.Data
      */
+    private var prevValue:Object;
     override public function set data(value:Object):void {
       if (value != null) {
         var newValue:Data = null;
         if (value is Array) 
           newValue = Data.fromArray(value as Array);
         if (value is ArrayCollection) {
+          if (prevValue && prevValue is ArrayCollection) {
+            (prevValue as ArrayCollection).removeEventListener(CollectionEvent.COLLECTION_CHANGE, updateDataFromAC);
+          }
           (value as ArrayCollection).addEventListener(CollectionEvent.COLLECTION_CHANGE, updateDataFromAC);
           newValue = Data.fromArray(value.source as Array);
         }
         if (value is Data) 
           newValue = value as Data;
+
+        // save a reference to allow removing the event listener
+        prevValue = value;
   
         if (newValue !== this.data) {
           vis.data = newValue;
+          styleNodes();
+          styleEdges();
           if (this.data == null) {
             createOperators();
           }
           super.data = newValue;
-//          dispatchEvent(new JuiceKitEvent(JuiceKitEvent.DATA_ROOT_CHANGE));
         }
         
       }
     }
     override public function get data():Object { return super.data }
+
+    /**
+    * Set invariant properties for nodes. Subclasses should override this.
+    */
+    public function styleNodes():void {      
+    }
+    
+    /**
+    * Set invariant properties for edges. Subclasses should override this.
+    */
+    public function styleEdges():void {      
+    }
 
   }
 }

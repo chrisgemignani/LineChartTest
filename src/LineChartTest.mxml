@@ -89,12 +89,14 @@
         <mx:Label text="showLines"/>
         <mx:CheckBox id="sl" selected="false"/>
         <mx:Spacer height="20"/>
-        <mx:Button label="change data" click="hi.data = FlareCategoryValueChart2.getTimeline(40,4)"/>
+        <mx:Button label="change data" click="hi.data = FlareLineChart.getTimeline(40,4)"/>
+        <mx:Button label="extraops" click="hi.extraOperators = [new PropertyEncoder({fillColor: 0xffff0000}, 'nodes')]"/>
+        <mx:Button label="remove extraops" click="hi.extraOperators = []"/>
 
 
       </mx:VBox>
       <mx:VBox width="50%">
-        <local:FlareCategoryValueChart2 id="hi" data="{FlareCategoryValueChart2.getTimeline(13,3)}"
+        <local:FlareLineChart id="hi" data="{FlareLineChart.getTimeline(13,3)}"
                                         width="500"
                                         height="400"
                                         backgroundColor="#ffffff"

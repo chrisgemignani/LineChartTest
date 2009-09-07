@@ -23,10 +23,15 @@ package  {
   
 
   [Bindable]
-  public class FlareCategoryValueChart2 extends FlareVisBase {
-    public function FlareCategoryValueChart2() {
+  public class FlareLineChart extends FlareVisBase {
+    public function FlareLineChart() {
       super();
       this.registerActions(actionMap);
+      baseOperators.push(axisLayout);
+      baseOperators.push(lineColorEncoder);
+      baseOperators.push(markerColorEncoder);
+      baseOperators.push(nodePropertyEncoder);
+      baseOperators.push(edgePropertyEncoder);
     }
     
 
@@ -65,7 +70,6 @@ package  {
     * or a function that will receive the PropertyChangeEvent.
     */
     private var actionMap:Object = {
-      'extraOperators': 'operators',
       'fontSize': textFormatChanged,
       'fontColor': textFormatChanged,
       'fontWeight': textFormatChanged,
@@ -172,58 +176,22 @@ package  {
     public var categoryAxisShowLabels:Boolean = true;
     public var valueAxisLabelFormat:String = '0';
 
-    public var axisLayout:AxisLayout = new AxisLayout("data.date", "data.count");
     public var lineColorPalette:ColorPalette = ColorPalette.fromHeuristic('#999999');
-    public var lineColorEncoder:ColorEncoder = new ColorEncoder(lineColorField, Data.EDGES, "lineColor", ScaleType.LINEAR, lineColorPalette);
     public var markerColorPalette:ColorPalette = ColorPalette.getPaletteByName('spectral');
+    
+    
+
+    //------------------------
+    // encoders
+    //------------------------
+
+    public var axisLayout:AxisLayout = new AxisLayout("data.date", "data.count");
+    public var lineColorEncoder:ColorEncoder = new ColorEncoder(lineColorField, Data.EDGES, "lineColor", ScaleType.LINEAR, lineColorPalette);
     public var markerColorEncoder:ColorEncoder = new ColorEncoder(markerColorField, Data.NODES, "fillColor", ScaleType.LINEAR, markerColorPalette);
-
     public var nodePropertyEncoder:PropertyEncoder = new PropertyEncoder({lineAlpha: 1.0, alpha: markerAlpha, buttonMode: false, scaleX: 1, scaleY: 1, size: markerSize, lineColor: borderColor, lineWidth: borderWidth});
-
     public var edgePropertyEncoder:PropertyEncoder = new PropertyEncoder({lineWidth: lineWidth, lineAlpha: 1.0}, Data.EDGES);
 
-
-    override protected function initVisualization():void {
-      super.initVisualization();
-    }
     
-    override protected function createOperators():void {
-      //vis.data = FlareCategoryValueChart2.getTimeline(10,4);
-
-//      var timeline:OperatorList = new OperatorList(axisLayout, lineColorEncoder, markerColorEncoder, nodePropertyEncoder, edgePropertyEncoder);
-      vis.operators.clear();
-      vis.operators.add(axisLayout);
-      vis.operators.add(lineColorEncoder);
-      vis.operators.add(markerColorEncoder);
-      vis.operators.add(nodePropertyEncoder);
-      vis.operators.add(edgePropertyEncoder);
-
-//		  vis.operators.add(new AxisLayout("data.date", "data.count"));
-//			vis.operators.add(new ColorEncoder("data.series", Data.EDGES,
-//					"lineColor", ScaleType.CATEGORIES));
-//		  vis.operators.add(new ColorEncoder("data.series", Data.NODES,
-//					"fillColor", ScaleType.CATEGORIES));
-//		  vis.operators.add(new PropertyEncoder({
-//					lineAlpha: 0, alpha: 0.5, buttonMode: false,
-//					scaleX: 1, scaleY: 1, size: 0.5
-//				}));
-//		  vis.operators.add(new PropertyEncoder({lineWidth:2}, Data.EDGES));
-
-
-//      var forces:ForceDirectedLayout = new ForceDirectedLayout(true);
-//      forces.simulation.nbodyForce.gravitation = -10;
-//      forces.defaultSpringLength = 20;
-//      vis.operators.add(new OperatorSwitch(timeline, forces));
-//      vis.operators[0].index = 0;
-
-      with (vis.xyAxes.xAxis) {
-        // position axis labels along timeline
-        horizontalAnchor = TextSprite.LEFT;
-        verticalAnchor = TextSprite.MIDDLE;
-        labelAngle = Math.PI / 2;
-      }
-    }
-
     public function bad():void {
       //vis.xyAxes.yAxis.axisScale.max = 400;
       if (vis.operators[0].index == 0) {

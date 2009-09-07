@@ -1,6 +1,8 @@
 package  {
   import flare.util.Property;
+  import flare.vis.controls.Control;
   import flare.vis.data.Data;
+  import flare.vis.operator.Operator;
   
   import mx.binding.utils.ChangeWatcher;
   import mx.collections.ArrayCollection;
@@ -26,6 +28,10 @@ package  {
     */
     public function FlareVisBase() {
       super();
+      ChangeWatcher.watch(this, 'baseOperators', createOperators);
+      ChangeWatcher.watch(this, 'extraOperators', createOperators);
+      ChangeWatcher.watch(this, 'baseControls', createControls);
+      ChangeWatcher.watch(this, 'extraControls', createControls);
     }
     
     public function registerActions(actionMap:Object):void {
@@ -109,12 +115,19 @@ package  {
     * until data is assigned to the visualization. This avoids problems
     * with scale bindings in the Flare framework.</p>
     * 
-    * <p>Subclasses should override this to perform <code>vis.operators.add</code>
-    * for all desired operators</p>
+    * <p>Subclasses should place the base operators needed for 
+    * the visualization in <code>baseOperators</code>.</p>
     */ 
-    protected function createOperators():void {      
+    protected function createOperators(e:*=null):void {      
       vis.operators.clear();
-      // add operators here
+      var op:Operator;
+      for each (op in baseOperators) {
+        vis.operators.add(op);
+      }
+      for each (op in extraOperators) {
+        vis.operators.add(op);
+      }
+      invalidateProperties();
     }
 
     /** 
@@ -123,15 +136,26 @@ package  {
     * <p>The creation of <code>vis.controls</code> is <i>deferred</i> 
     * until data is assigned to the visualization.</p>
     * 
-    * <p>Subclasses should override this to perform <code>vis.controls.add</code>
-    * for all desired controls</p>
+    * <p>Subclasses should place all base controls needed for the
+    * visualization in <code>baseControls</code>.</p>
     */ 
-    protected function createControls():void {
+    protected function createControls(e:*=null):void {
       vis.controls.clear();  
-      // add controls here
+      var ctrl:Control;
+      for each (ctrl in baseControls) {
+        vis.controls.add(ctrl);
+      }
+      for each (ctrl in extraControls) {
+        vis.controls.add(ctrl);
+      }
+      invalidateProperties();
     }
     
-    protected var extraOperators:Array = [];
+    public var baseOperators:Array = [];
+    public var extraOperators:Array = [];
+    public var baseControls:Array = [];
+    public var extraControls:Array = [];
+    
 
     /**
      * Sets the data value to a <code>Data</code> data

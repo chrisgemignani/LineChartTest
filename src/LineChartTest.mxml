@@ -4,6 +4,8 @@
                 xmlns:local="*"
                 xmlns:charts="org.juicekit.charts.*"
                 initialize="init()"
+                width="100%"
+                height="100%"
                 xmlns:controls="org.juicekit.visual.controls.*">
   <mx:Script>
     <![CDATA[
@@ -21,127 +23,126 @@
       import flare.vis.operator.encoder.PropertyEncoder;
       import flare.util.Maths;
       import flare.vis.data.Data;
-      
 
-      public function getTimeline(N:int, M:int):Data {
-        var MAX:Number = 60;
-        var t0:Date = new Date(1979, 5, 15);
-        var t1:Date = new Date(1982, 2, 19);
-        var x:Number, f:Number;
-
-        var data:Data = new Data();
-        for (var j:uint = 0; j < M; ++j) {
-          for (var i:uint = 0; i < N; ++i) {
-            f = i / (N - 1);
-            x = t0.time + f * (t1.time - t0.time);
-            data.addNode({series: int(j), val: int(f*100), date: new Date(x), count: int((j * MAX / M) + MAX / M * (1 + Maths.noise(13 * f, j)))});
-          }
-        }
-        // create timeline edges connecting items sorted by date
-        // and grouped by series
-			data.createEdges("data.date", "data.series");
-			data.edges.visit(function(d:DataSprite):void {
-			  var e:EdgeSprite = d as EdgeSprite;
-			  //e.shape = Shapes.BEZIER;
-			  e.shape = Shapes.LINE;
-//			  e.visible = false;
-//			  e.alpha = 0.0;
-			  e.lineWidth = 1.0;
-//			  e.lineColor = 0xffff0000;
-			});
-			
-			data.nodes.visit(function(d:DataSprite):void {
-			  trace(d.data.series, d.data.date, d.data.count);
-			});
-
-
-        return data;
-      }
 
       public function init():void {
-        bc.data = getTimeline(10, 10
-        );
-        
-        bc2.data = getTimeline(10, 3);
-        bc.extraOperators = [new PropertyEncoder({visible: false}, Data.NODES),
-                            new PropertyEncoder({lineWidth: 3}, Data.EDGES)];
-//        bc.extraOperators = [new PropertyEncoder({size: 0.7}, Data.NODES), 
-//                             new PropertyEncoder({arrowType: ArrowType.NONE, shape: Shapes.LINE, lineWidth: 2.0, lineColor: 0x99aaaaaa}, Data.EDGES),     
-//                             new PropertyEncoder({arrowType: ArrowType.TRIANGLE, shape: Shapes.LINE, lineWidth: 4.0, lineColor: 0x99ff0000}, Data.EDGES, function(d:DataSprite):Boolean {
-//                              var e:EdgeSprite = d as EdgeSprite;
-//                              return e.target.data['count'] < e.source.data['count']
-//                             })];
-        
-        var legend:Legend = Legend.fromValues("Legend Title", [
-	    {color: 0xff0000, shape:Shapes.X, label:"Red X"},
-	   {color: 0x00ff00, shape:Shapes.SQUARE, label:"Green Square"},
-	    {color: 0x0000ff, shape:Shapes.CIRCLE, label:"Blue Circle"}
-	  ]);
-	  
-	  
-	  //hboxy.addChild(legend as UIComponent);
-	  	  
-//	  hboxy.rawChildren.addChild(legend);
-//	  hboxy.rawChildren.addChild(legend);
-        
-//        new PropertyEncoder({arrowType: ArrowType.TRIANGLE, shape: Shapes.LINE, lineWidth: 4.0}, Data.EDGES)];        
+        var legend:Legend = Legend.fromValues("Legend Title", [{color: 0xff0000, shape: Shapes.X, label: "Red X"}, {color: 0x00ff00, shape: Shapes.SQUARE, label: "Green Square"}, {color: 0x0000ff, shape: Shapes.CIRCLE, label: "Blue Circle"}]);
+
       }
-      
-      private function traceIt():void {
-        debug.text = '';
-        debug.text = bc.vis.operators.length + '\n\n';
-  			bc.data.nodes.visit(function(d:DataSprite):void {
-          debug.text += Strings.format('NODE: {0} {1} {2} {3:X}\n', d.data.series, ' ', d.data.count, d.fillColor);
-  			});
-  			bc.data.edges.visit(function(d:DataSprite):void {
-          debug.text += Strings.format('EDGE: {0} {1} {2} {3:X}\n', d.data.series, ' ', d.data.count, d.lineColor);
-  			});
-  			bc.colorPalette.length = 10; 
-  			hboxy.addChild(Legend.fromScale('howdydoody', bc.categoryAxis.axisScale, bc.colorPalette));
-//        var legend:Legend = Legend.fromValues("Legend Title", [
-//    	    {color: 0xff0000, shape:Shapes.X, label:"Red X"},
-//    	    {color: 0x00ff00, shape:Shapes.SQUARE, label:"Green Square"},
-//    	    {color: 0x0000ff, shape:Shapes.CIRCLE, label:"Blue Circle"}
-//    	  ]);
-//    	  hboxy.addChild(legend);
-      }  
-      
     ]]>
   </mx:Script>
   <controls:StylerInstance/>
-  <mx:VBox id="vbox" paddingLeft="100" paddingRight="100" paddingTop="100">
-    <mx:HBox id="hboxy">
-    <local:LLineChart id="bc"
-                      width="600"
-                      height="300"
-                      backgroundColor="#ffffff" 
-                      categoryEncodingField="val"
-                      valueEncodingField="count" 
-                      colorEncodingField="series"
-                      valueAxisMaximum="{slider.value}"
-                      palette="Blues" linePalette="Blues" lineColorEncodingField="series"
-                      transitionPeriod="NaN"/>
-      
-    </mx:HBox>
-    <mx:Spacer height="20"/>                    
-    <charts:ColumnChart id="bc2"
-                        width="300"
-                        height="300"
-                        backgroundColor="#ddffff"
-                        categoryEncodingField="val"
-                        valueEncodingField="count" palette="blue"
-                        valueAxisMaximum="{slider.value}"
-                        paddingTop="1"/>
 
+  <mx:VBox id="vbox"
+           paddingLeft="20"
+           paddingRight="20"
+           paddingTop="20"
+           width="100%"
+           height="100%">
+    <mx:HBox id="hboxy" width="100%" height="100%">
+      <mx:VBox verticalGap="-4" width="50%">
+        <mx:Button label="Mark" click="hi.markerColorField = 'data.date'; hi.lineColorField = 'target.data.date'"/>
+        <mx:Button label="bad" click="hi.bad()"/>
+        <mx:Spacer height="20"/>
+        <mx:Label text="a"/>
+        <mx:HSlider id="slider"
+                    width="100"
+                    minimum="0"
+                    maximum="400"
+                    value="200"/>
+        <mx:Spacer height="20"/>
+        <mx:Label text="Alpha"/>
+        <mx:HSlider id="alphaslider"
+                    width="100"
+                    minimum="0"
+                    maximum="1.0"
+                    value="0.5"/>
+        <mx:Spacer height="20"/>
+        <mx:Label text="FontSize"/>
+        <mx:HSlider id="fontsizeslider"
+                    width="100"
+                    minimum="8"
+                    maximum="16"
+                    value="12"/>
+        <mx:Spacer height="20"/>
+        <mx:Label text="linewidth"/>
+        <mx:HSlider id="linewidthslider"
+                    width="100"
+                    minimum="0.5"
+                    maximum="20"
+                    value="2"/>
+        <mx:Spacer height="20"/>
+        <mx:Label text="master alpha"/>
+        <mx:HSlider id="ma"
+                    width="100"
+                    minimum="0"
+                    maximum="1"
+                    value="0.75"/>
+        <mx:Spacer height="20"/>
+        <mx:Label text="markerPalette"/>
+        <mx:TextInput id="paletteTI"/>
+        <mx:Label text="linePalette"/>
+        <mx:TextInput id="linepaletteTI"/>
+        <mx:Label text="labelformat"/>
+        <mx:TextInput id="labelFormatTI" text="0.0"/>
+        <mx:Spacer height="20"/>
+        <mx:Label text="showLines"/>
+        <mx:CheckBox id="sl" selected="false"/>
+        <mx:Spacer height="20"/>
+        <mx:Button label="change data" click="hi.data = FlareCategoryValueChart2.getTimeline(40,4)"/>
+
+
+      </mx:VBox>
+      <mx:VBox width="50%">
+        <local:FlareCategoryValueChart2 id="hi" data="{FlareCategoryValueChart2.getTimeline(13,3)}"
+                                        width="500"
+                                        height="400"
+                                        backgroundColor="#ffffff"
+                                        fontColor="#663333"
+                                        fontWeight="bold"
+                                        masterAlpha="{ma.value}"
+                                        yMax="{slider.value}"
+                                        transitionPeriod="0.5"
+                                        markerSize="{slider.value/100}"
+                                        markerAlpha="{alphaslider.value}"
+                                        fontSize="{fontsizeslider.value}"
+                                        lineWidth="{linewidthslider.value}"
+                                        markerPalette="{paletteTI.text}"
+                                        linePalette="{linepaletteTI.text}"
+                                        valueAxisShowLines="{sl.selected}"
+                                        valueAxisLabelFormat="{labelFormatTI.text}"/>
+      </mx:VBox>
+    </mx:HBox>
   </mx:VBox>
-  <mx:HBox>
-    
-    <mx:HSlider id="slider"
-                width="200"
-                minimum="0"
-                maximum="400"
-                value="200"/>
-     <mx:Button click="traceIt()" label="trace"/>
-  </mx:HBox>
-  <mx:Text id="debug" width="400" x="450" y="20" height="100%"/>
+
+
+  <!--
+       <local:LLineChart id="bc"
+       width="600"
+       height="300"
+       backgroundColor="#ffffff"
+       categoryEncodingField="val"
+       valueEncodingField="count"
+       colorEncodingField="series"
+       valueAxisMaximum="{slider.value}"
+       palette="Blues" linePalette="Blues" lineColorEncodingField="series"
+       transitionPeriod="NaN"/>
+
+       </mx:HBox>
+       <mx:Spacer height="20"/>
+       <charts:ColumnChart id="bc2"
+       width="300"
+       height="300"
+       backgroundColor="#ddffff"
+       categoryEncodingField="val"
+       valueEncodingField="count" palette="blue"
+       valueAxisMaximum="{slider.value}"
+       paddingTop="1"/>
+  -->
+
+  <mx:Text id="debug"
+           width="400"
+           x="450"
+           y="20"
+           height="100%"/>
 </mx:Application>

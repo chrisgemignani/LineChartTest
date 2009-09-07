@@ -3,7 +3,6 @@ package  {
   import flare.util.Shapes;
   import flare.vis.axis.Axis;
   import flare.vis.data.Data;
-  import flare.vis.data.EdgeSprite;
   import flare.vis.operator.Operator;
   import flare.vis.operator.encoder.ColorEncoder;
   import flare.vis.operator.layout.AxisLayout;
@@ -15,6 +14,7 @@ package  {
   import org.juicekit.flare.util.palette.ColorPalette;
   import org.juicekit.util.helper.CSSUtil;
   
+  
 
   [Bindable]
   public class LLineChart extends FlareCategoryValueChart {
@@ -22,7 +22,6 @@ package  {
       super();
       super.shape = Shapes.CIRCLE;
     }
-    
     // Invoke the class constructor to initialize the CSS defaults.
     classConstructor();
 

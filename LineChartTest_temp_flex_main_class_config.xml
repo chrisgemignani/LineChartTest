@@ -1,0 +1,18 @@
+<flex-config xmlns="http://www.adobe.com/2006/flex-config">
+  <target-player>9.0.124</target-player>
+  <compiler>
+    <debug>true</debug>
+    <source-path>
+      <path-element>src</path-element>
+    </source-path>
+    <library-path append="true">
+      <path-element>/Users/cgemignani/dev/flex/workspace/juicekit_private/bin/juicekit_private.swc</path-element>
+      <path-element>/Users/cgemignani/dev/flex/workspace/juicekit/flare/flare/bin/flare.swc</path-element>
+      <path-element>/Users/cgemignani/dev/flex/workspace/juicekit/flexlib/bin-debug/flexlib_juicekit.swc</path-element>
+    </library-path>
+  </compiler>
+  <file-specs>
+    <path-element>src/IngenixLineChart.mxml</path-element>
+  </file-specs>
+  <output>/Users/cgemignani/dev/flex/workspace/LineChartTest/bin-debug/_IngenixLineChart.swf</output>
+</flex-config>

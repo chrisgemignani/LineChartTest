@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" xmlns:controls="org.juicekit.visual.controls.*" xmlns:local="*" preloader="org.juicekit.util.preloader.JuiceKitPreloader" xmlns:charts="org.juicekit.charts.*" backgroundGradientColors="[0x4e4e4e, 0x4e4e4e]" backgroundColor="#4e4e4e" xmlns:legend="flare.vis.legend.*" initialize="init()">
+  <mx:Script>
+    <![CDATA[
+      import flare.vis.controls.PanZoomControl;
+      import flare.vis.controls.DragControl;
+      import flare.util.Strings;
+      import flare.display.TextSprite;
+
+      import flare.vis.events.TooltipEvent;
+
+      import flare.vis.controls.TooltipControl;
+      import flare.util.Shapes;
+      import flare.vis.data.DataSprite;
+      import flare.vis.operator.encoder.PropertyEncoder;
+      import org.juicekit.flare.util.palette.ColorPalette;
+      import flare.vis.legend.Legend;
+      import flare.util.Maths;
+      import flare.vis.data.Data;
+
+      public var chartData:Array = [
+      {date: '2007Q4', count: 170, series: 'Total'}, 
+      {date: '2008Q1', count: 149, series: 'Total'}, 
+      {date: '2008Q2', count: 200, series: 'Total'}, 
+      {date: '2008Q3', count: 300, series: 'Total'}, 
+      {date: '2008Q4', count: 405, series: 'Total'},
+      {date: '2009Q1', count: 400, series: 'Total'},]
+
+      public var chartData2:Array = [
+      {date: '2007Q4', count: 100 * Math.random(), series: 'Active'}, 
+      {date: '2008Q1', count: 150 * Math.random(), series: 'Active'}, 
+      {date: '2008Q2', count: 200 * Math.random(), series: 'Active'}, 
+      {date: '2008Q3', count: 300 * Math.random(), series: 'Active'}, 
+      {date: '2008Q4', count: 400 * Math.random(), series: 'Active'},
+      {date: '2009Q1', count: 400 * Math.random(), series: 'Active'}, 
+      {date: '2007Q4', count: 100 * Math.random(), series: 'Retired'}, 
+      {date: '2008Q1', count: 150 * Math.random(), series: 'Retired'}, 
+      {date: '2008Q2', count: 200 * Math.random(), series: 'Retired'}, 
+      {date: '2008Q3', count: 300 * Math.random(), series: 'Retired'}, 
+      {date: '2008Q4', count: 400 * Math.random(), series: 'Retired'},
+      {date: '2009Q1', count: 401 * Math.random(), series: 'Retired'},]
+      
+      public function init():void {
+        sparkChart.extraOperators = [
+          new PropertyEncoder({fillColor: 0xff009900, size: 0.7, lineColor: 0xff4e4e4e}, 'nodes', function(d:DataSprite):Boolean {
+                            return d.data.count >= sparkChart.vis.data.nodes.stats('data.count').maximum
+                          }),
+          new PropertyEncoder({fillColor: 0xff990000, size: 0.7, shape: Shapes.SQUARE, lineColor: 0xff4e4e4e}, 'nodes', function(d:DataSprite):Boolean {
+                            return d.data.count <= sparkChart.vis.data.nodes.stats('data.count').minimum
+                          })
+        ]
+        sparkChart.extraControls = [        
+			    new TooltipControl(DataSprite, null,
+    				function(evt:TooltipEvent):void {
+    					var d:DataSprite = evt.node;
+    					if (d != null) {
+    					TextSprite(evt.tooltip).htmlText = 
+    						Strings.format("{0}", d.data.count);
+    					  
+    					}
+    				}
+    			)];
+        lineChart.extraControls = [        
+			    new TooltipControl(DataSprite, null,
+    				function(evt:TooltipEvent):void {
+    					var d:DataSprite = evt.node;
+    					if (d != null) {
+    					TextSprite(evt.tooltip).htmlText = 
+    						Strings.format("{0:$#,##0} dollarsƒ", d.data.count);
+    					  
+    					}
+    				}
+    			)];
+
+      }
+        
+    ]]>
+  </mx:Script>
+
+  <controls:StylerInstance/>
+
+  <mx:VBox id="vbox"
+           height="100%"
+           width="100%"
+           paddingTop="20"
+           paddingLeft="50"
+           backgroundColor="#4e4e4e"
+           verticalGap="-30">
+    <local:FlareLineChart id="lineChart"
+                           data="{chartData2}"
+                           categoryEncodingField="date"
+                           valueEncodingField="value"
+                           seriesField="series"
+                           colorEncodingField="series"
+                           valueAxisShowLines="true"
+                           categoryAxisShowLines="false"
+                           borderWidth="2.0"
+                           backgroundColor="#ababab"
+                           fontColor="#bbbbbb"
+                           valueMin="0"
+                           valueMax="1000"
+                           height="300"
+                           width="900"
+                           borderColor="0xababab"
+                           markerSize="1.2"
+                           lineWidth="3.0"
+                           linePalette="{new ColorPalette([0x606060, 0xe46f01])}"
+                           markerPalette="{new ColorPalette([0xff606060, 0xffe46f01])}"/>
+    <mx:Spacer height="100"/>
+               
+    <local:FlareLineChart id="sparkChart"
+                          data="{chartData}"
+                          categoryEncodingField="date"
+                          valueEncodingField="value"
+                          seriesField="series"
+                          colorEncodingField="series"
+                          valueAxisShowLines="false"
+                          categoryAxisShowLines="false"
+                          valueAxisShowLabels="false"
+                          categoryAxisShowLabels="false"
+                          borderWidth="2.0"
+                          fontColor="#bbbbbb"
+                          height="25"
+                          width="93"
+                          markerSize="0.0"
+                          lineWidth="1.5"
+                          linePalette="{new ColorPalette([0x606060, 0xe46f01])}"/>
+    <mx:Spacer height="100"/>
+    <mx:HBox>
+      <mx:Button label="Base" click="{lineChart.data = chartData}"/>
+      <mx:Button label="Active/Retired" click="{lineChart.data = chartData2}"/>
+    </mx:HBox>
+  </mx:VBox>
+    <mx:HBox width="{lineChart.width+50}" top="30">
+      <mx:Spacer width="100%"/>
+      <mx:Canvas width="12" height="12" backgroundColor="0x606060"/>
+      <mx:Label color="#333333" text="all visits"/>
+      <mx:Canvas width="12" height="12" backgroundColor="0xe46f01"/>
+      <mx:Label color="#333333" text="selected visits"/>
+    </mx:HBox>
+  
+</mx:Application>

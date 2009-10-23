@@ -55,6 +55,7 @@ package  {
       }
     }
     
+    //private function valueEncodingFieldChanged(e:
     
     
     /**
@@ -73,8 +74,10 @@ package  {
       'markerPalette': colorPaletteChanged,
       'linePalette': colorPaletteChanged, 
 
-      'markerColorField': 'markerColorEncoder.source',
-      'lineColorField': 'lineColorEncoder.source',
+      'markerColorField': '@markerColorEncoder.source',
+      'lineColorField': '@lineColorEncoder.source',
+      'valueEncodingField': '@axisLayout.yField',
+      'categoryEncodingField': '@axisLayout.xField',
 
       'markerSize': 'nodePropertyEncoder.values.size',
       'markerAlpha': 'nodePropertyEncoder.values.alpha',

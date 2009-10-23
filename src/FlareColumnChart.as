@@ -23,7 +23,7 @@ package  {
     }
 
 
-    override public function styleNodes():void {
+    override protected function styleNodes():void {
       vis.data.nodes.visit(function(d:DataSprite):void {
         var n:NodeSprite = d as NodeSprite;
         n.shape = Shapes.VERTICAL_BAR;

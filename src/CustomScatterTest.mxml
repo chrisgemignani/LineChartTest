@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+                layout="absolute"
+                xmlns:local="*"
+                backgroundGradientColors="[#ffffff,#ffffff]"
+                backgroundColor="white">
+  <mx:Script>
+    <![CDATA[
+      [Bindable]
+      public var sampleData:Array = [{x: 1, y: 1}, {x: 4.0, y: 2}, {x: 4.9, y: 4.2}];
+    ]]>
+  </mx:Script>
+
+  <local:FlareCustomScatter data="{sampleData}"
+                            paddingLeft="50"
+                            paddingTop="50"
+                            xField="data.x"
+                            yField="data.y"
+                            width="300"
+                            offset="{slider.value-50}"
+                            height="300"/>
+  <mx:HSlider minimum="0" maximum="100" id="slider" value="50"/>
+</mx:Application>

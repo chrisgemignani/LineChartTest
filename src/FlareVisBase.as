@@ -1,8 +1,12 @@
-package  {
+package {
   import flare.util.Property;
   import flare.vis.controls.Control;
   import flare.vis.data.Data;
+  import flare.vis.data.DataSprite;
+  import flare.vis.events.DataEvent;
   import flare.vis.operator.Operator;
+  
+  import flash.utils.Dictionary;
   
   import mx.binding.utils.ChangeWatcher;
   import mx.collections.ArrayCollection;
@@ -10,7 +14,7 @@ package  {
   import mx.events.PropertyChangeEvent;
   
   import org.juicekit.visual.controls.FlareControlBase;
-  
+
 
   /**
    * The class <code>FlareVisBase</code> provides a common implementation
@@ -22,66 +26,136 @@ package  {
    */
   [Bindable]
   public class FlareVisBase extends FlareControlBase {
-    
+
     /**
-    * Constructor
-    */
+     * Constructor
+     */
     public function FlareVisBase() {
       super();
+      //Our objects in our arrays may not be in the right form for the ChangeWatcher
       ChangeWatcher.watch(this, 'baseOperators', createOperators);
       ChangeWatcher.watch(this, 'extraOperators', createOperators);
       ChangeWatcher.watch(this, 'baseControls', createControls);
       ChangeWatcher.watch(this, 'extraControls', createControls);
     }
-    
+
+
+    /**
+     * <p>Registers an <code>actionMap</code> object. This is a
+     * simple object containing a sequence of keys and values.
+     * The keys represent bindable public variables, and the values are
+     * actions to perform when the variable changes. Values can be
+     * strings or functions with signature <code>function(e:PropertyChangeEvent):void</code>
+     * or an Array of strings and functions.</p>
+     *
+     * <p>If the value is a string the property represented by the dotted string
+     * is changed to the new value of the key. For instance:<p>
+     *
+     * <pre>
+     * rev: 'vis.xyAxes.xReverse'
+     * </pre>
+     *
+     * <p>If public variable <code>rev</code> changes, the new value is set into
+     * <code>vis.xyAxes.xReverse</p>
+     *
+     * <p>If the value is a function, the function is passed the
+     * <code>PropertyChangeEvent</code> when the <code>key</code> changes.</p>
+     *
+     * <p>If the value is an Array, all of the elements of the Array are evaluated
+     * either as Strings or as functions.</p>
+     */
     public function registerActions(actionMap:Object):void {
       for (var k:String in actionMap) {
         ChangeWatcher.watch(this, k, watchForChanges);
         registeredActionMap[k] = actionMap[k];
       }
     }
-    
+
     /**
-    * A proxy for Flare properties. The key is the
-    * local property that may change. The value is either
-    * a property that the new value should be assigned to,
-    * or a function that will receive the PropertyChangeEvent.
-    */
-    private var registeredActionMap:Object = {
-    }
+     * A proxy for Flare properties. The key is the
+     * local property that may change. The value is either
+     * a property that the new value should be assigned to,
+     * or a function that will receive the PropertyChangeEvent.
+     */
+    private var registeredActionMap:Object = {}
 
 
-    private var queue:Array = [];
-    private function clearQueue():void {
-      var _queue:Array = queue.slice();
-      queue = [];
+    /**
+     * A list of deferred property changes.
+     *
+     * These will be applied when data is set on the visualization.
+     */
+    private var propertyChangeQueue:Array = [];
+
+
+    /**
+     * Apply all the property changes in <code>propertyChangeQueue</code>.
+     */
+    private function clearPropertyChangeQueue():void {
+      var _queue:Array = propertyChangeQueue.slice();
+      propertyChangeQueue = [];
       for each (var e:PropertyChangeEvent in _queue) {
         watchForChanges(e);
-      } 
-      
+      }
     }
+
+
+
+
     /**
-    * Evaluated if any of the keys in <code>actionMap</code>
-    * change.
-    */
+     * Evaluated if any of the keys in <code>actionMap</code>
+     * change.
+     *
+     * @param e a PropertyChangeEvent, ChangeWatchers are set up
+     * by registerActions
+     *
+     * @private
+     */
     private function watchForChanges(e:PropertyChangeEvent):void {
+      function handleAction(source:*, a:*, e:PropertyChangeEvent):void {
+        if (a is String) {
+          try {
+            var s:String = a as String;    
+            var dataProp:Boolean = false;
+                    
+            // if the property is preceeded by
+            // @, we are setting a reference to one of the 
+            // data fields. 
+            if (s.charAt(0) == '@') {
+              s = s.substr(1);
+              dataProp = true;
+            } 
+            
+            var newVal:* = e.newValue;
+            if (dataProp) {
+              // make sure the new value is preceeded by 'data.'
+              if (newVal.toString().substr(0,5) != 'data.') {
+                newVal = asFlareProperty(newVal.toString());
+              }  
+            } 
+            Property.$(s).setValue(source, newVal);                    
+          } catch (e:Error) {
+            var x:int = 0;
+          }
+        } else if (a is Function) {
+          a(e);
+        }
+      }
       var prop:Object = e.property;
-      if (!vis || !vis.data) {
-        queue.push(e.clone());
+      if (vis == null || vis.data == null) {
+        // store the property change to be applied later
+        propertyChangeQueue.push(e.clone());
       } else {
-        clearQueue();
+        clearPropertyChangeQueue();
         if (registeredActionMap.hasOwnProperty(prop)) {
           var action:* = registeredActionMap[prop];
-          if (action == null) {
-          } else if (action is String) {
-            try {
-              Property.$(action).setValue(this, e.newValue);                    
-            } catch (e:Error) {
-              var x:int = 0;
-            }
-          } else if (action is Function) {
-            action(e);
-          } 
+          if (action is Array) {
+            for each (var itm:* in action) {
+              handleAction(this, itm, e);
+            }        
+          } else {            
+            handleAction(this, action, e);
+          }
         }
         invalidateProperties();
       }      
@@ -92,8 +166,6 @@ package  {
       super.commitProperties();
       updateVisualization();
     }
-
-
 
     
     /** 
@@ -138,76 +210,187 @@ package  {
       }
       invalidateProperties();
     }
-    
-    public var baseOperators:Array = [];
+
+    /**
+     * Operators that are used in every visualization
+     */
+    protected var baseOperators:Array = [];
+
+    /**
+     * Operators that are added by the user of the visualization.
+     */
     public var extraOperators:Array = [];
-    public var baseControls:Array = [];
+
+    /**
+     * Controls that are used in every visualization.
+     */
+    protected var baseControls:Array = [];
+
+    /**
+     * Controls that are added by the user of the visualization.
+     */
     public var extraControls:Array = [];
-    
-    
+
+
     /**
-    * Called whenever a source data collection changes.
-    * 
-    * Simply resets the entire data for the visualization to the 
-    * data in the ArrayCollection. 
-    * 
-    * TODO: optimize
-    */
+     * Called whenever a source data collection changes.
+     *
+     * Simply resets the entire data for the visualization to the
+     * data in the ArrayCollection.
+     *
+     * TODO: optimize
+     *
+     * @private
+     */
     private function updateDataFromAC(event:CollectionEvent):void {
+      trace('updateDataFromAC');
+      performDataMatching = false;
       data = event.target;
+      event.stopPropagation();
+      performDataMatching = true;
     }
-    
-    
+
     /**
-     * Sets the data value to a <code>Data</code> data
+     * Holds a reference to the previously set data
+     *
+     * @private
+     */
+    private var prevData:Object;
+
+    /**
+     * Holds an array of fields that could be used for matching elements
+     * to previous incarnations of the same element when the data changes.
+     *
+     */
+    public var dataMatchingFields:Array;
+    
+    
+    // update, append, replace
+    public var dataMode:String;
+    public var performDataMatching:Boolean = false;
+
+
+
+    public function set dataProvider(value:Object):void {
+      
+    }
+
+    /**
+     * <p>Sets the data value to a Flare <code>Data</code>
      * object used for rendering position and color
-     * of the chart.
+     * of the chart.</p>
+     *
+     * @param value an Array, ArrayCollection or Flare.Data object
+     * containing the data that will be visualized.
      *
      * @see flare.vis.data.Data
      */
-    private var prevValue:Object;
     override public function set data(value:Object):void {
+      //if (value === prevData) return;
+      trace('setting data', performDataMatching, super.data); 
+      if (super.data == null && value is ArrayCollection && (value as ArrayCollection).length == 0) {
+        trace('aborting set data');
+        return;
+      }
       if (value != null) {
         var newValue:Data = null;
-        if (value is Array) 
+        if (value is Array) {
           newValue = Data.fromArray(value as Array);
+          trace('\tArray ', newValue.nodes.length);
+        }
         if (value is ArrayCollection) {
-          if (prevValue && prevValue is ArrayCollection) {
-            (prevValue as ArrayCollection).removeEventListener(CollectionEvent.COLLECTION_CHANGE, updateDataFromAC);
+          trace('value is ArrayCollection', value.length);
+          if (prevData && prevData is ArrayCollection) {
+            (prevData as ArrayCollection).removeEventListener(CollectionEvent.COLLECTION_CHANGE, updateDataFromAC);
           }
           (value as ArrayCollection).addEventListener(CollectionEvent.COLLECTION_CHANGE, updateDataFromAC);
           newValue = Data.fromArray(value.source as Array);
+          trace('\tArrayCollection ', newValue.nodes.length);
         }
-        if (value is Data) 
+        if (value is Data) {
           newValue = value as Data;
+          trace('\tData ', newValue.nodes.length);
+        }
 
         // save a reference to allow removing the event listener
-        prevValue = value;
-  
+        prevData = value;
+
         if (newValue !== this.data) {
-          vis.data = newValue;
+          var dataMatch:Dictionary = new Dictionary();
+          var key:String;
+          var e:String;
+          if (performDataMatching && dataMatchingFields != null && dataMatchingFields.length > 0 && vis.data != null) {
+            vis.data.nodes.visit(function(d:DataSprite):void {
+                key = '';
+                for (e in dataMatchingFields)
+                  key += d.data[dataMatchingFields[e]] + '_';
+
+                dataMatch[key.toString()] = d;
+              });
+            newValue.nodes.visit(function(d:DataSprite):void {
+                key = '';
+                for (e in dataMatchingFields) {
+                  key += d.data[dataMatchingFields[e]] + '_';
+                }
+
+                if (dataMatch[key] === undefined) {
+                  vis.data.addNode(d);
+                }
+                else {
+                  dataMatch[key].visible = true;
+                  dataMatch[key].data = d.data;
+                  delete dataMatch[key.toString()];
+                }
+              });
+              trace('dispatching DataEvent.ADD');
+              vis.data.dispatchEvent(new DataEvent(DataEvent.ADD, new DataSprite(), vis.data.nodes));
+          }
+          else {            
+            vis.data = newValue;
+          }
           styleNodes();
           styleEdges();
+
           if (this.data == null) {
             createOperators();
+            createControls();
           }
-          super.data = newValue;
+          clearPropertyChangeQueue();
+          styleVis();
+          super.data = vis.data;
+//          vis.update(new Transitioner(2)).play();
+          invalidateProperties();
         }
-        
       }
     }
-    override public function get data():Object { return super.data }
+
+
+    override public function get data():Object {
+      return super.data
+    }
+
 
     /**
-    * Set invariant properties for nodes. Subclasses should override this.
-    */
-    public function styleNodes():void {      
+     * A hook to set properties for nodes <b>after</b> new data is assigned.
+     * Subclasses should override this.
+     */
+    protected function styleNodes():void {
     }
-    
+
+
     /**
-    * Set invariant properties for edges. Subclasses should override this.
-    */
-    public function styleEdges():void {      
+     * A hook to set properties for edges <b>after</b> new data is assigned.
+     * Subclasses should override this.
+     */
+    protected function styleEdges():void {
+    }
+
+
+    /**
+     * A hook to set properties for visualization <b>after</b> new data is assigned and
+     * operators are created. Subclassess should override this.
+     */
+    protected function styleVis():void {
     }
 
   }

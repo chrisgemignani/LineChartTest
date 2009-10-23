@@ -9,6 +9,7 @@
                 xmlns:controls="org.juicekit.visual.controls.*">
   <mx:Script>
     <![CDATA[
+      import mx.collections.ArrayCollection;
       import mx.core.UIComponent;
       import mx.core.IUIComponent;
       import flare.vis.legend.Legend;
@@ -24,10 +25,24 @@
       import flare.util.Maths;
       import flare.vis.data.Data;
 
+      [Bindable] public var ac:ArrayCollection = FlareLineChart.getTimeline(10,3).nodes.toDataArrayCollection();
+      [Bindable] public var ac2:ArrayCollection = FlareLineChart.getTimeline(3,5).nodes.toDataArrayCollection();
+      
+  
 
       public function init():void {
         var legend:Legend = Legend.fromValues("Legend Title", [{color: 0xff0000, shape: Shapes.X, label: "Red X"}, {color: 0x00ff00, shape: Shapes.SQUARE, label: "Green Square"}, {color: 0x0000ff, shape: Shapes.CIRCLE, label: "Blue Circle"}]);
 
+        var d:Data = FlareLineChart.getTimeline(30,3);
+        d.nodes.visit(function(d:DataSprite):void {
+            ac.addItem(d.data);
+          }); 
+        hi.data = ac;
+        dg.dataProvider = ac;
+      }
+
+      private function testit():void {
+        var x:int = 0;
       }
     ]]>
   </mx:Script>
@@ -41,7 +56,7 @@
            height="100%">
     <mx:HBox id="hboxy" width="100%" height="100%">
       <mx:VBox verticalGap="-4" width="50%">
-        <mx:Button label="Mark" click="hi.markerColorField = 'data.date'; hi.lineColorField = 'target.data.date'"/>
+        <mx:Button label="Mark" click="testit(); hi.markerColorField = 'data.date'; hi.lineColorField = 'target.data.date'"/>
         <mx:Spacer height="20"/>
         <mx:Label text="a"/>
         <mx:HSlider id="slider"
@@ -89,30 +104,30 @@
         <mx:CheckBox id="sl" selected="false"/>
         <mx:Spacer height="20"/>
         <mx:Button label="change data" click="hi.data = FlareLineChart.getTimeline(40,4)"/>
-        <mx:Button label="extraops" click="hi.extraOperators = [new PropertyEncoder({fillColor: 0xffff0000}, 'nodes')]"/>
+        <mx:Button label="extraops" click="hi.extraOperators = [new PropertyEncoder({fillColor: 0xffff0000}, 'nodes', function(d:DataSprite):Boolean { 
+          return d.data.count > hi.vis.data.nodes.stats('data.count').average 
+        })]"/>
         <mx:Button label="remove extraops" click="hi.extraOperators = []"/>
         <mx:Button label="marker" click="hi.markerShape=Shapes.CROSS"/>
-
-
+        <mx:DataGrid id="dg" editable="true"/>
       </mx:VBox>
       <mx:VBox width="50%">
-        <local:FlareLineChart id="hi" data="{FlareLineChart.getTimeline(13,3)}"
-                                        width="500"
-                                        height="400"
-                                        backgroundColor="#ffffff"
-                                        fontColor="#663333" valueMin="0"
-                                        fontWeight="bold" stacked="false"
-                                        masterAlpha="{ma.value}"
-                                        valueMax="{slider.value}"                                        
-                                        transitionPeriod="0.5"
-                                        markerSize="{slider.value/100}"
-                                        markerAlpha="{alphaslider.value}"
-                                        fontSize="{fontsizeslider.value}"
-                                        lineWidth="{linewidthslider.value}"
-                                        markerPalette="{paletteTI.text}"
-                                        linePalette="{linepaletteTI.text}"
-                                        valueAxisShowLines="{sl.selected}"
-                                        valueAxisLabelFormat="{labelFormatTI.text}"/>
+        <local:FlareLineChart id="hi" width="500"
+                              height="400" data="{ac2}" categoryEncodingField="date"
+                              backgroundColor="#ffffff"
+                              fontColor="#663333" valueMin="0"
+                              fontWeight="bold" stacked="false"
+                              masterAlpha="{ma.value}"
+                              valueMax="{slider.value}"                                        
+                              transitionPeriod="0.5"
+                              markerSize="{slider.value/100}"
+                              markerAlpha="{alphaslider.value}"
+                              fontSize="{fontsizeslider.value}"
+                              lineWidth="{linewidthslider.value}"
+                              markerPalette="{paletteTI.text}"
+                              linePalette="{linepaletteTI.text}"
+                              valueAxisShowLines="{sl.selected}"
+                              valueAxisLabelFormat="{labelFormatTI.text}"/>
       </mx:VBox>
     </mx:HBox>
   </mx:VBox>

@@ -1,7 +1,9 @@
 package  {
+  import flare.scale.ScaleType;
   import flare.util.Maths;
-  import flare.vis.axis.Axis;
   import flare.vis.data.Data;
+  
+  import mx.events.PropertyChangeEvent;
   
 
   [Bindable]
@@ -18,8 +20,18 @@ package  {
     * or a function that will receive the PropertyChangeEvent.
     */
     private var actionMap:Object = {
+      seriesField: setSeriesField
     }
-
+    
+    private function setSeriesField(e:PropertyChangeEvent):void {
+      vis.data.createEdges(asFlareProperty(this.categoryEncodingField), asFlareProperty(seriesField));
+    }
+    public var seriesField:String;
+    override protected function styleVis():void {
+      if (seriesField != null) {
+        vis.data.createEdges(asFlareProperty(categoryEncodingField), asFlareProperty(seriesField));        
+      }
+    }
 
     public static function getTimeline(N:int, M:int):Data {
       var MAX:Number = 60;
@@ -37,7 +49,7 @@ package  {
       }
       // create timeline edges connecting items sorted by date
       // and grouped by series
-      data.createEdges("data.date", "data.series");
+      data.createEdges('data.date', 'data.series');
       return data;
     }
 

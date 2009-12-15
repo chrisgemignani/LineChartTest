@@ -18,15 +18,15 @@
       import flare.util.Maths;
       import flare.vis.data.Data;
 
-      public var chartData:Array = [
+      [Bindable] public var chartData:Array = [
       {date: '2007Q4', count: 170, series: 'Total'}, 
       {date: '2008Q1', count: 149, series: 'Total'}, 
       {date: '2008Q2', count: 200, series: 'Total'}, 
       {date: '2008Q3', count: 300, series: 'Total'}, 
       {date: '2008Q4', count: 405, series: 'Total'},
-      {date: '2009Q1', count: 400, series: 'Total'},]
+      {date: '2009Q1', count: 400, series: 'Total'},];
 
-      public var chartData2:Array = [
+      [Bindable] public var chartData2:Array = [
       {date: '2007Q4', count: 100 * Math.random(), series: 'Active'}, 
       {date: '2008Q1', count: 150 * Math.random(), series: 'Active'}, 
       {date: '2008Q2', count: 200 * Math.random(), series: 'Active'}, 
@@ -38,7 +38,7 @@
       {date: '2008Q2', count: 200 * Math.random(), series: 'Retired'}, 
       {date: '2008Q3', count: 300 * Math.random(), series: 'Retired'}, 
       {date: '2008Q4', count: 400 * Math.random(), series: 'Retired'},
-      {date: '2009Q1', count: 401 * Math.random(), series: 'Retired'},]
+      {date: '2009Q1', count: 401 * Math.random(), series: 'Retired'},];
       
       public function init():void {
         sparkChart.extraOperators = [

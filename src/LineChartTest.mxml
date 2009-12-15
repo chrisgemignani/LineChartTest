@@ -113,7 +113,7 @@
       </mx:VBox>
       <mx:VBox width="50%">
         <local:FlareLineChart id="hi" width="500"
-                              height="400" data="{ac2}" categoryEncodingField="date"
+                              height="400" categoryEncodingField="date"
                               backgroundColor="#ffffff"
                               fontColor="#663333" valueMin="0"
                               fontWeight="bold" stacked="false"

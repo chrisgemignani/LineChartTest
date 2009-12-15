@@ -16,6 +16,7 @@
     <application path="CustomScatterTest.mxml"/>
     <application path="IngenixLineChart.mxml"/>
     <application path="QualcomLineChart.mxml"/>
+    <application path="DataArrayCollectionTest.mxml"/>
   </applications>
   <modules/>
   <buildCSSFiles/>

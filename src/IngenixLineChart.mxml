@@ -3,10 +3,14 @@
                 preloader="org.juicekit.util.preloader.JuiceKitPreloader"
                 xmlns:charts="org.juicekit.charts.*"
                 xmlns:controls="org.juicekit.visual.controls.*"
+                xmlns:data="org.juicekit.util.data.*"
                 xmlns:local="*"
-                xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:data="org.juicekit.util.data.*" xmlns:query="org.juicekit.flare.query.*">
+                xmlns:mx="http://www.adobe.com/2006/mxml"
+                xmlns:query="org.juicekit.flare.query.*">
   <mx:Script>
     <![CDATA[
+      import org.juicekit.events.DataMouseEvent;
+      import flare.vis.data.DataList;
       import flare.vis.data.ScaleBinding;
       import flare.query.Query;
       import flare.vis.data.EdgeSprite;
@@ -15,13 +19,14 @@
       import flare.util.Strings;
       import flare.vis.data.DataSprite;
       import flare.vis.data.NodeSprite;
+      import flare.vis.events.DataEvent;
       import mx.controls.Alert;
       import mx.collections.ArrayCollection;
       import flare.util.Maths;
       import flare.vis.data.Data;
 
       public var chartData:Array = [{date: '2007Q4', count: 100, series: 'Total'}, {date: '2008Q1', count: 150, series: 'Total'}, {date: '2008Q2', count: 200, series: 'Total'}, {date: '2008Q3', count: 300, series: 'Total'}, {date: '2008Q4', count: 400, series: 'Total'},];
-      
+
 
       public var chartData2:Array = [{date: '2007Q4', count: 100 * Math.random(), series: 'Active'}, {date: '2008Q1', count: 150 * Math.random(), series: 'Active'}, {date: '2008Q2', count: 200 * Math.random(), series: 'Active'}, {date: '2008Q3', count: 300 * Math.random(), series: 'Active'}, {date: '2008Q4', count: 400 * Math.random(), series: 'Active'}, {date: '2007Q4', count: 100 * Math.random(), series: 'Retired'}, {date: '2008Q1', count: 150 * Math.random(), series: 'Retired'}, {date: '2008Q2', count: 200 * Math.random(), series: 'Retired'}, {date: '2008Q3', count: 300 * Math.random(), series: 'Retired'}, {date: '2008Q4', count: 400 * Math.random(), series: 'Retired'},];
 
@@ -29,8 +34,8 @@
       public var chartDataAC:ArrayCollection = new ArrayCollection(chartData);
       [Bindable]
       public var chartData2AC:ArrayCollection = new ArrayCollection(chartData2);
-      
-      public var data2result:ArrayCollection = new ArrayCollection([
+
+      [Bindable] public var data2result:DataArrayCollection = new DataArrayCollection([
 //{Type: 'Drug', Month: '200301', paid: 2733669},
 //{Type: 'Drug', Month: '200302', paid: 2457558},
 //{Type: 'Drug', Month: '200303', paid: 2687102},
@@ -53,8 +58,7 @@
 //{Type: 'Drug', Month: '200408', paid: 3261850},
 //{Type: 'Drug', Month: '200409', paid: 3177277},
 //{Type: 'Drug', Month: '200410', paid: 3239766},
-{Type: 'Drug', Month: '200411', paid: 3356427},
-{Type: 'Drug', Month: '200412', paid: 3297152},
+        {Type: 'Drug', Month: '200411', paid: 3356427}, {Type: 'Drug', Month: '200412', paid: 3297152},
 //{Type: 'Medical', Month: '200301', paid: 4519457},
 //{Type: 'Medical', Month: '200302', paid: 4352641},
 //{Type: 'Medical', Month: '200303', paid: 4887138},
@@ -77,12 +81,19 @@
 //{Type: 'Medical', Month: '200408', paid: 5964107},
 //{Type: 'Medical', Month: '200409', paid: 5328686},
 //{Type: 'Medical', Month: '200410', paid: 5577869},
-{Type: 'Medical', Month: '200411', paid: 5759854},
-{Type: 'Medical', Month: '200412', paid: 5509082}
+//        {Type: 'Medical', Month: '200411', paid: 5759854}, {Type: 'Medical', Month: '200412', paid: 5509082}
 ]);
-      
+
+      public function updateData2Result():void {
+        data2result.keyVars = ['Type', 'Month'];
+        data2result.source = [
+                {Type: 'Drug', Month: '200411', paid: 3000000}, 
+                {Type: 'Drug', Month: '200412', paid: 4000000}
+        ];        
+      }
+
       public function debugit():void {
-        
+
         var s:Array = ['AXIS'];
         //s.push(lineChart.vis.xyAxes.xAxis.scale.scaleType);
         var lc:FlareLineChart = lineChart;
@@ -91,143 +102,173 @@
         s.push('Fields: ' + lc.axisLayout.xField + '/' + lc.axisLayout.yField);
         s.push('yAxis min: ' + lc.vis.xyAxes.yAxis.axisScale.min);
         s.push('yAxis max: ' + lc.vis.xyAxes.yAxis.axisScale.max);
-        
+
         s.push('');
         s.push('NODES:');
         lineChart.vis.data.nodes.visit(function(d:DataSprite):void {
-          var n:NodeSprite = d as NodeSprite;
-          var news:String = '';
-          for (var k:String in n.data) {
-            if (k != 'mx_internal_uid') {
-              news += k + ': ' + n.data[k].toString() + ', ';              
+            var n:NodeSprite = d as NodeSprite;
+            var news:String = '';
+            for (var k:String in n.data) {
+              if (k != 'mx_internal_uid') {
+                news += k + ': ' + n.data[k].toString() + ', ';
+              }
             }
-          }
-          news += ' ' + n.x.toString() + '/' + n.y.toString(); 
-          s.push(news);
+            news += ' ' + n.x.toString() + '/' + n.y.toString();
+            s.push(news);
           //s.push(Strings.format('{0:0.00} {1} {2} {3}', n.data.count, n.data.date, n.data.series, n.data.count is String));
-        });
-        
+          });
+
 //        s.push('EDGES:');
 //        lineChart.vis.data.edges.visit(function(d:DataSprite):void {
 //          var e:EdgeSprite = d as EdgeSprite;
 //          s.push((e.source.data.mx_internal_uid as String).substr(0,3) + ' --> ' + (e.target.data.mx_internal_uid as String).substr(0,3));
 //        });
-        
+
         debug.text = s.join('\n');
 
-      lc.axisLayout.xScale.scaleType = ScaleType.ORDINAL;
-      lc.axisLayout.yScale.scaleType = ScaleType.LINEAR;
-      lc.vis.update();
+        lc.axisLayout.xScale.scaleType = ScaleType.ORDINAL;
+        lc.axisLayout.yScale.scaleType = ScaleType.LINEAR;
+        lc.vis.update();
 
       }
       
+      public function doMouseOver(event:DataMouseEvent):void {
+        if (event.dataSprite is NodeSprite) {
+          debug.text = event.data.paid.toString();
+        }
+      }
+
       public function postprocess(element:Object, index:int, array:Array):void {
         element['Month'] = element['Month'].toString();
       }
-      
+
       public function myFilter(element:Object, index:int, array:Array):Boolean {
         return element['Month'] > 200410;
       }
-       
+
       public function changeData():void {
         lineChart.data = data2.result;
-      } 
-      
+      }
+
       public function changeQuery():void {
         var lc:FlareLineChart = lineChart;
-        lc.valueMin = 0;
+        //lc.valueMin = 0;
 
-            
         (lc.vis.xyAxes.yAxis.axisScale as ScaleBinding).scaleType = ScaleType.LOG;
         var q:Query = select({'Type': 'Type'}, {'Month': 'Month'}, {'paid': sum('Coinsurance Amount')}).groupby('Type', 'Month');
-        data2.query = q;        
+        data2.query = q;
+      }
+
+      public function changeRawData():void {
+//        lineChart.valueMin = 0;
+//        lineChart.valueMax = 1000000;
+        lineChart.transitionPeriod = .25;
+//        lineChart.axisLayout.xScale.scaleType = ScaleType.ORDINAL;
+//        lineChart.axisLayout.yScale.scaleType = ScaleType.LINEAR;
+        var d:Data = lineChart.vis.data as Data;
+        trace('listeners');
+        trace(d.hasEventListener(flare.vis.events.DataEvent.ADD));
+        trace(d.hasEventListener(flare.vis.events.DataEvent.REMOVE));
+        trace(d.hasEventListener(flare.vis.events.DataEvent.UPDATE));
+        var nodes:DataList = d.nodes;
+        d.nodes.visit(function(ds:DataSprite):void {
+            nodes.clearStats('data.paid');
+            nodes.clearStats('data.Type');
+            nodes.clearStats('data.Month');
+            ds.data.paid = Math.random() * 1000000;
+            ds.data.Type = Math.random() < 0.5? 'Drug' : 'Medical';
+            ds.data.Month = Math.random() < 0.5? '200412' : '200411';
+            d.dispatchEvent(new flare.vis.events.DataEvent(flare.vis.events.DataEvent.UPDATE, ds, d.nodes));
+          });
+        lineChart.invalidateProperties();
+
       }
     ]]>
   </mx:Script>
 
   <controls:StylerInstance/>
-  
-  <data:ArrayCollectionFromUrl url="http://media.juiceanalytics.com/ingenix/financial_data_new.csv" id="data" postprocess="postprocess" filterFunction="myFilter" />
+
+  <data:ArrayCollectionFromUrl id="data" filterFunction="myFilter" postprocessRow="postprocess" url="http://media.juiceanalytics.com/ingenix/financial_data_new.csv"/>
   <query:LiveQuery id="data2" dataProvider="{data.result}" query="{
     select({'Type': 'Type'}, {'Month': 'Month'}, {'paid': sum('Benefits Paid')}).groupby('Type', 'Month')
   }"/>
 
-<!--  
-  <data:Pivot dataProvider="{financialData_new.result}" dimensions="['Type','Month','MonthPaid','VendorNum','Vendor','Plan','Status']" id="data_new" pivotField="Month"/>
-Type,Month,MonthPaid,VendorNum,Vendor,Plan,Status,Allowable Charge Amount,Benefits Paid,COB Amount,Coinsurance Amount,Copay Amount,Discount Amount,Deductible Amount,Employee Count,Subscriber Count
-Medical,200412,200503,814000,Vendor 1,Indemnity,Retired,394474,48969,341221,3663,0,0,610,162.36,260.67
-Medical,200412,200503,814000,Vendor 1,Other,Retired,40928,1632,39021,268,0,0,0,162.36,260.67
-Medical,200412,200503,814000,Vendor 1,PPO,Active,167708,148567,4082,10582,5548,74792,2149,162.36,260.67
-Medical,200412,200503,814000,Vendor 1,PPO,Retired,709120,60098,646757,1951,60,1477,272,162.36,260.67
-Medical,200412,200503,815000,Vendor 2,Other,Retired,291,13,248,0,30,5,0,162.36,260.67
-Medical,200412,200503,815000,Vendor 2,PPO,Active,168530,167653,330,-1053,1740,189130,0,162.36,260.67
+  <!--
+       <data:Pivot dataProvider="{financialData_new.result}" dimensions="['Type','Month','MonthPaid','VendorNum','Vendor','Plan','Status']" id="data_new" pivotField="Month"/>
+       Type,Month,MonthPaid,VendorNum,Vendor,Plan,Status,Allowable Charge Amount,Benefits Paid,COB Amount,Coinsurance Amount,Copay Amount,Discount Amount,Deductible Amount,Employee Count,Subscriber Count
+       Medical,200412,200503,814000,Vendor 1,Indemnity,Retired,394474,48969,341221,3663,0,0,610,162.36,260.67
+       Medical,200412,200503,814000,Vendor 1,Other,Retired,40928,1632,39021,268,0,0,0,162.36,260.67
+       Medical,200412,200503,814000,Vendor 1,PPO,Active,167708,148567,4082,10582,5548,74792,2149,162.36,260.67
+       Medical,200412,200503,814000,Vendor 1,PPO,Retired,709120,60098,646757,1951,60,1477,272,162.36,260.67
+       Medical,200412,200503,815000,Vendor 2,Other,Retired,291,13,248,0,30,5,0,162.36,260.67
+       Medical,200412,200503,815000,Vendor 2,PPO,Active,168530,167653,330,-1053,1740,189130,0,162.36,260.67
 
-  <query:LiveQuery id="byquarter" dataProvider="{data.result}" query="{select('QUARTER', 
-                  {'TOTALPOP': sum('Total benefits paid')}, 
-                  {'series': _('hi')},
-                  {'change': pctchange('Total benefits paid', 'Employer cost share')})
-            .groupby('QUARTER')}"/>
+       <query:LiveQuery id="byquarter" dataProvider="{data.result}" query="{select('QUARTER',
+       {'TOTALPOP': sum('Total benefits paid')},
+       {'series': _('hi')},
+       {'change': pctchange('Total benefits paid', 'Employer cost share')})
+       .groupby('QUARTER')}"/>
 
-  <query:LiveQuery id="byquarterline" dataProvider="{data.result}" query="{select(
-                  {'date': 'QUARTER'}, 
-                  {'count': sum('Total benefits paid')}, 
-                  {'series': _('Active')})
-            .groupby('QUARTER')}"/>
+       <query:LiveQuery id="byquarterline" dataProvider="{data.result}" query="{select(
+       {'date': 'QUARTER'},
+       {'count': sum('Total benefits paid')},
+       {'series': _('Active')})
+       .groupby('QUARTER')}"/>
 
-  <query:LiveQuery id="alldata" dataProvider="{data.result}" query="{select('MEDICAL VENDOR', 'STATUS', 'PLAN', 'Employer cost share', 'Total benefits paid')}"/>
--->
-    
+       <query:LiveQuery id="alldata" dataProvider="{data.result}" query="{select('MEDICAL VENDOR', 'STATUS', 'PLAN', 'Employer cost share', 'Total benefits paid')}"/>
+  -->
+
 
 
   <mx:VBox height="100%" width="100%" paddingLeft="20" paddingTop="20">
     <mx:HBox width="100%">
 
-<!--
-                          data="{chartDataAC}"
-                          categoryEncodingField="date"
-                          colorEncodingField="series"
-                          dataMatchingFields="['date', 'series']"
-                          seriesField="series"
-                          valueEncodingField="count"
+      <!--
+           data="{chartDataAC}"
+           categoryEncodingField="date"
+           colorEncodingField="series"
+           dataMatchingFields="['date', 'series']"
+           seriesField="series"
+           valueEncodingField="count"
 
-                          data="{data2.result}"
-                          categoryEncodingField="Month"
-                          colorEncodingField="Type"
-                          dataMatchingFields="['Month', 'Type']"
-                          seriesField="Type"
-                          valueEncodingField="paid"
+           data="{data2.result}"
+           categoryEncodingField="Month"
+           colorEncodingField="Type"
+           dataMatchingFields="['Month', 'Type']"
+           seriesField="Type"
+           valueEncodingField="paid"
 
-                          data="{data2.result}"
-                          categoryEncodingField="Month"
-                          colorEncodingField="Type"
-                          dataMatchingFields="['Month', 'Type']"
-                          seriesField="Type"
--->      
-    <local:FlareLineChart id="lineChart"
-                          height="300"
-                          width="400"
-                          borderColor="#ffffff"
-                          borderWidth="2.0"
-                          categoryAxisShowLines="false"
-                          transitionPeriod="NaN"
-                          data="{data2.result}"
-                          categoryEncodingField="Month"
-                          markerColorField="Type"
-                          lineColorField="Type"
-                          colorEncodingField="Type"
-                          dataMatchingFields="['Month', 'Type']"
-                          seriesField="Type"
-                          valueEncodingField="paid"
-                                                    linePalette="Reds"
-                          lineWidth="3.0"
-                          markerPalette="Reds"
-                          markerSize="1.0"
-                          paddingBottom="40"
-                          paddingLeft="50"
-                          paddingTop="10"
-                          valueAxisShowLines="false"/>
-      <mx:Spacer width="100"/>                      
-      <mx:Text width="50%" id="debug"/>                      
+           data="{data2.result}"
+           categoryEncodingField="Month"
+           colorEncodingField="Type"
+           dataMatchingFields="['Month', 'Type']"
+           seriesField="Type"
+      -->
+      <local:FlareLineChart id="lineChart" jkDataMouseOver="doMouseOver(event)"
+                            dataProvider="{data2result}" backgroundColor="red"
+                            height="300" 
+                            width="400"
+                            borderColor="#ffffff"
+                            borderWidth="2.0"
+                            categoryAxisShowLines="false"
+                            categoryEncodingField="Month"
+                            colorEncodingField="Type"
+                            dataMatchingFields="['Month', 'Type']"
+                            lineColorField="Type"
+                            linePalette="Reds"
+                            lineWidth="3.0"
+                            markerColorField="Type"
+                            markerPalette="Blues"
+                            markerSize="1.0"
+                            paddingBottom="20"
+                            paddingLeft="100"
+                            paddingRight="0"
+                            paddingTop="20"
+                            seriesField="Type"
+                            valueAxisShowLines="false"
+                            valueEncodingField="paid"/>
+      <mx:Spacer width="100"/>
+      <mx:Text id="debug" width="50%"/>
     </mx:HBox>
     <mx:HBox>
       <mx:Button click="{lineChart.data = chartDataAC; lineChart.categoryEncodingField='date', lineChart.seriesField='series', lineChart.valueEncodingField='count'; lineChart.dataMatchingFields = []}" label="Base"/>
@@ -238,15 +279,20 @@ Medical,200412,200503,815000,Vendor 2,PPO,Active,168530,167653,330,-1053,1740,18
       <mx:Button click="debugit()" label="debug"/>
       <mx:Button click="changeQuery()" label="change query"/>
       <mx:Button click="changeData()" label="change data"/>
+      <mx:Button click="updateData2Result()" label="update ac"/>
+      <mx:Button click="changeRawData()" label="change raw data"/>
     </mx:HBox>
+    <!--
     <mx:HBox includeInLayout="false" visible="false">
       <mx:DataGrid dataProvider="{chartDataAC}" editable="true"/>
       <mx:DataGrid dataProvider="{chartData2AC}" editable="true" rowCount="10"/>
     </mx:HBox>
+    -->
     <mx:HBox includeInLayout="true">
       <mx:DataGrid dataProvider="{chartDataAC}" editable="true"/>
-      <mx:DataGrid dataProvider="{data2.result}"/>
+      <mx:DataGrid dataProvider="{data2.result}" editable="true"/>
+      <mx:DataGrid dataProvider="{data2result}" editable="true"/>
     </mx:HBox>
   </mx:VBox>
-  
+
 </mx:Application>

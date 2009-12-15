@@ -2,11 +2,8 @@ package {
   import flare.util.Property;
   import flare.vis.controls.Control;
   import flare.vis.data.Data;
-  import flare.vis.data.DataSprite;
   import flare.vis.events.DataEvent;
   import flare.vis.operator.Operator;
-  
-  import flash.utils.Dictionary;
   
   import mx.binding.utils.ChangeWatcher;
   import mx.collections.ArrayCollection;
@@ -266,27 +263,21 @@ package {
     
     
     // update, append, replace
+    /**
+    * 
+    * 
+    */ 
     public var dataMode:String;
     public var performDataMatching:Boolean = false;
 
 
-
-    public function set dataProvider(value:Object):void {
-      
+    private function updateData(event:DataEvent):void {
+      invalidateProperties();
     }
 
-    /**
-     * <p>Sets the data value to a Flare <code>Data</code>
-     * object used for rendering position and color
-     * of the chart.</p>
-     *
-     * @param value an Array, ArrayCollection or Flare.Data object
-     * containing the data that will be visualized.
-     *
-     * @see flare.vis.data.Data
-     */
-    override public function set data(value:Object):void {
+    public function set dataProvider(value:Object):void {
       //if (value === prevData) return;
+      if (vis.data != null) return;
       trace('setting data', performDataMatching, super.data); 
       if (super.data == null && value is ArrayCollection && (value as ArrayCollection).length == 0) {
         trace('aborting set data');
@@ -297,17 +288,20 @@ package {
         if (value is Array) {
           newValue = Data.fromArray(value as Array);
           trace('\tArray ', newValue.nodes.length);
-        }
-        if (value is ArrayCollection) {
+        } else if (value is DataArrayCollection) {
+          trace('assigning from dataArrayCollection');
+          newValue = (value as DataArrayCollection).data();
+          
+        } else if (value is ArrayCollection) {
           trace('value is ArrayCollection', value.length);
-          if (prevData && prevData is ArrayCollection) {
-            (prevData as ArrayCollection).removeEventListener(CollectionEvent.COLLECTION_CHANGE, updateDataFromAC);
-          }
-          (value as ArrayCollection).addEventListener(CollectionEvent.COLLECTION_CHANGE, updateDataFromAC);
+//NOTE: this is disabled as updates should be coming thru DataArrayCollection          
+//          if (prevData && prevData is ArrayCollection) {
+//            (prevData as ArrayCollection).removeEventListener(CollectionEvent.COLLECTION_CHANGE, updateDataFromAC);
+//          }
+//          (value as ArrayCollection).addEventListener(CollectionEvent.COLLECTION_CHANGE, updateDataFromAC);
           newValue = Data.fromArray(value.source as Array);
           trace('\tArrayCollection ', newValue.nodes.length);
-        }
-        if (value is Data) {
+        } else if (value is Data) {
           newValue = value as Data;
           trace('\tData ', newValue.nodes.length);
         }
@@ -315,39 +309,9 @@ package {
         // save a reference to allow removing the event listener
         prevData = value;
 
-        if (newValue !== this.data) {
-          var dataMatch:Dictionary = new Dictionary();
-          var key:String;
-          var e:String;
-          if (performDataMatching && dataMatchingFields != null && dataMatchingFields.length > 0 && vis.data != null) {
-            vis.data.nodes.visit(function(d:DataSprite):void {
-                key = '';
-                for (e in dataMatchingFields)
-                  key += d.data[dataMatchingFields[e]] + '_';
-
-                dataMatch[key.toString()] = d;
-              });
-            newValue.nodes.visit(function(d:DataSprite):void {
-                key = '';
-                for (e in dataMatchingFields) {
-                  key += d.data[dataMatchingFields[e]] + '_';
-                }
-
-                if (dataMatch[key] === undefined) {
-                  vis.data.addNode(d);
-                }
-                else {
-                  dataMatch[key].visible = true;
-                  dataMatch[key].data = d.data;
-                  delete dataMatch[key.toString()];
-                }
-              });
-              trace('dispatching DataEvent.ADD');
-              vis.data.dispatchEvent(new DataEvent(DataEvent.ADD, new DataSprite(), vis.data.nodes));
-          }
-          else {            
-            vis.data = newValue;
-          }
+        if (newValue !== vis.data) {
+          newValue.addEventListener(DataEvent.UPDATE, updateData);
+          vis.data = newValue;
           styleNodes();
           styleEdges();
 
@@ -365,9 +329,6 @@ package {
     }
 
 
-    override public function get data():Object {
-      return super.data
-    }
 
 
     /**

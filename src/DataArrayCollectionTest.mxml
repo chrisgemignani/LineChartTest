@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application initialize="init()" layout="vertical" xmlns:mx="http://www.adobe.com/2006/mxml">
+  <mx:Script>
+    <![CDATA[
+      import mx.controls.Alert;
+
+      import mx.events.CollectionEvent;
+      [Bindable]
+      private var d:DataArrayCollection = new DataArrayCollection([{a: 1, b: 2.1}, {a: 2, b: 2.5},]);
+
+      private function init():void {
+/*        
+        d.addEventListener(CollectionEvent.COLLECTION_CHANGE, function(e:CollectionEvent):void {
+            var x:int = 0;
+            Alert.show(e.type);
+          });
+*/          
+      }
+      
+      private function setSource():void {
+        d.keyVars = ['a'];
+        d.dataMode = DataArrayCollection.MERGE;
+        var newArr:Array = [{a: 1, b: 3.0}, {a: 3, b: 3.0+Math.random()},]
+        newArr[1].b = 3.0 + Math.random();
+        d.source = newArr;
+        var x:int = 0;
+      }
+    ]]>
+  </mx:Script>
+
+  <mx:DataGrid id="dg" dataProvider="{d}" editable="true">
+    <mx:columns>
+      <mx:DataGridColumn dataField="a"/>
+      <mx:DataGridColumn dataField="b" itemEditor="mx.controls.NumericStepper"/>
+    </mx:columns>
+  </mx:DataGrid>
+  
+  <mx:Button click="setSource()" label="setsource"/>
+  <mx:Button click="dg.dataProvider = d" label="reset"/>
+  <mx:Button click="Alert.show(d.stats('b').average.toString())" label="Avg"/>
+  <mx:Label text="{d.stats('b').average}"/>
+</mx:Application>

@@ -7,6 +7,7 @@ package {
   
   import mx.binding.utils.ChangeWatcher;
   import mx.collections.ArrayCollection;
+  import mx.collections.ICollectionView;
   import mx.events.CollectionEvent;
   import mx.events.PropertyChangeEvent;
   
@@ -270,15 +271,55 @@ package {
     public var dataMode:String;
     public var performDataMatching:Boolean = false;
 
-
-    private function updateData(event:DataEvent):void {
+    public function updateData(event:DataEvent):void {
+      styleNodes();
+      styleEdges();
+      styleVis(); 
       invalidateProperties();
+    }
+    
+    protected var collection:ICollectionView;
+    
+    protected function collectionChangeHandler(event:Event):void {
+      if (event.currentTarget is DataArrayCollection) {
+        this.dataArrayProvider = (event.currentTarget as DataArrayCollection);
+      }
+    }
+    
+    /**
+    * dataArrayProvider is meant to be renamed to dataProvider once non-DataArrayCollections are deprecated
+    * dataArrayProvider acts as a dataProvider when dealing with DataArrayCollections
+    */
+    
+    public function set dataArrayProvider(value:DataArrayCollection):void {
+        var newValue:Data = value.data(this);
+        
+        if (newValue !== vis.data) {
+          newValue.addEventListener(DataEvent.UPDATE, updateData);
+          vis.data = newValue;
+          styleNodes();
+          styleEdges();
+          styleVis();
+
+          if (this.data == null) {
+            createOperators();
+            createControls();
+          }
+          
+          clearPropertyChangeQueue();
+          super.data = vis.data;
+//          vis.update(new Transitioner(2)).play();
+          invalidateProperties();
+        }
+        
+      
     }
 
     public function set dataProvider(value:Object):void {
       //if (value === prevData) return;
-      if (vis.data != null) return;
+//      if (vis.data != null) return;
       trace('setting data', performDataMatching, super.data); 
+      
       if (super.data == null && value is ArrayCollection && (value as ArrayCollection).length == 0) {
         trace('aborting set data');
         return;
@@ -290,8 +331,8 @@ package {
           trace('\tArray ', newValue.nodes.length);
         } else if (value is DataArrayCollection) {
           trace('assigning from dataArrayCollection');
-          newValue = (value as DataArrayCollection).data();
-          
+          newValue = (value as DataArrayCollection).data(this);
+
         } else if (value is ArrayCollection) {
           trace('value is ArrayCollection', value.length);
 //NOTE: this is disabled as updates should be coming thru DataArrayCollection          
@@ -314,13 +355,14 @@ package {
           vis.data = newValue;
           styleNodes();
           styleEdges();
+          styleVis();
 
           if (this.data == null) {
             createOperators();
             createControls();
           }
+          
           clearPropertyChangeQueue();
-          styleVis();
           super.data = vis.data;
 //          vis.update(new Transitioner(2)).play();
           invalidateProperties();

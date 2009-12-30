@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<mx:Application initialize="init()" layout="vertical" xmlns:mx="http://www.adobe.com/2006/mxml">
+<mx:Application initialize="init()" layout="vertical" xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:local="*" xmlns:data="org.juicekit.util.data.*">
   <mx:Script>
     <![CDATA[
       import mx.controls.Alert;
 
       import mx.events.CollectionEvent;
-      [Bindable]
-      private var d:DataArrayCollection = new DataArrayCollection([{a: 1, b: 2.1}, {a: 2, b: 2.5},]);
+      import flare.vis.events.DataEvent;
+      
+      import flare.query.Query;
+      
+      import flare.query.methods.*;
+
+//      [Bindable]
+//      private var d:DataArrayCollection = new DataArrayCollection([{a: 2, b: 1.0, c: 1}, {a: 1, b: 5.5, c: 1},{a: 3, b: 0.3, c: 1}, {a:1, b: 5, c:2}, {a:2, b: 5, c:2}, {a:3, b: 5, c:2}]);
 
       private function init():void {
 /*        
@@ -17,26 +23,76 @@
 */          
       }
       
-      private function setSource():void {
-        d.keyVars = ['a'];
-        d.dataMode = DataArrayCollection.MERGE;
-        var newArr:Array = [{a: 1, b: 3.0}, {a: 3, b: 3.0+Math.random()},]
-        newArr[1].b = 3.0 + Math.random();
-        d.source = newArr;
-        var x:int = 0;
+      
+      [Bindable]
+      public var rund:int = 0;
+      
+      [Bindable]
+      public var numStates:int = 20;
+      
+      private function uStates():void {
+        numStates = Math.ceil(Math.random()*20) + 10;
+        q.query = new Query(['SEX','NAME','STATE',{'pop': 'POPEST200' + rund.toString() + '_CIV'}]).groupby('STATE','SEX').where(and(gt('SEX',_(0)),gt('STATE',_(0)),lt('STATE',_(numStates))));
+      }
+      
+      private function ud():void {
+        if (rund == 8)
+          rund = 0;
+        else
+          rund += 1;
+        q.query = new Query(['SEX','NAME','STATE',{'pop': 'POPEST200' + rund.toString() + '_CIV'}]).groupby('STATE','SEX').where(and(gt('SEX',_(0)),gt('STATE',_(0)),lt('STATE',_(numStates))));
       }
     ]]>
   </mx:Script>
+  <data:ArrayCollectionFromUrl id="webAC" url="http://media.juiceanalytics.com/census/SC-EST2008-AGESEX-CIV.csv" />
+  <data:LiveQuery id="q" query="{new Query(['SEX','NAME','STATE',{'pop': 'POPEST200' + rund.toString() + '_CIV'}]).groupby('STATE','SEX').where(and(gt('SEX',_(0)),gt('STATE',_(0)),lt('STATE',_(numStates))))}" dataProvider="{webAC.result}" />
+  <local:DataArrayCollection id="d" dataProvider="{q.result}" keyVars="['SEX','STATE']"/>
 
-  <mx:DataGrid id="dg" dataProvider="{d}" editable="true">
+<mx:Label text="{'POPEST200' + rund.toString() + '_CIV'}"/>
+<mx:Label text="{'States: ' + (numStates - 1).toString()}"/>
+  <mx:DataGrid id="dg" dataProvider="{q.result}">
     <mx:columns>
-      <mx:DataGridColumn dataField="a"/>
-      <mx:DataGridColumn dataField="b" itemEditor="mx.controls.NumericStepper"/>
+      <mx:DataGridColumn dataField="SEX"/>
+      <mx:DataGridColumn dataField="STATE"/>
+      <mx:DataGridColumn dataField="NAME"/>
+      <mx:DataGridColumn dataField="pop"/>
     </mx:columns>
   </mx:DataGrid>
+  <local:FlareLineChart id="lineChart"
+                            dataArrayProvider="{d}"
+                            height="300" 
+                            width="400"
+                            borderColor="#ffffff"
+                            borderWidth="2.0"
+                            categoryAxisShowLines="false"
+                            categoryEncodingField="data.STATE"
+                            colorEncodingField="data.SEX"
+                            lineColorField="data.SEX"
+                            linePalette="Reds"
+                            lineWidth="3.0" seriesField="data.SEX"
+                            markerPalette="Blues"
+                            markerSize="1.0" valueAxisLabelFormat="0.0"
+                            valueAxisShowLines="false"
+                            valueEncodingField="data.pop"/>
+                            
+     <local:FlareLineChart id="lineChartNew"
+                            dataArrayProvider="{d}"
+                            height="300" 
+                            width="400"
+                            borderColor="#ffffff"
+                            borderWidth="2.0"
+                            categoryAxisShowLines="false"
+                            categoryEncodingField="data.STATE"
+                            colorEncodingField="data.SEX"
+                            lineColorField="data.SEX"
+                            linePalette="Reds"
+                            lineWidth="5.0" seriesField="data.SEX"
+                            markerPalette="Blues"
+                            markerSize="1.0" valueAxisLabelFormat="0.0"
+                            valueAxisShowLines="false"
+                            valueEncodingField="data.pop"/>
   
-  <mx:Button click="setSource()" label="setsource"/>
-  <mx:Button click="dg.dataProvider = d" label="reset"/>
-  <mx:Button click="Alert.show(d.stats('b').average.toString())" label="Avg"/>
+  <mx:Button click="ud()" label="Change Data"/>
+  <mx:Button click="uStates()" label="Change State Number"/>
   <mx:Label text="{d.stats('b').average}"/>
 </mx:Application>

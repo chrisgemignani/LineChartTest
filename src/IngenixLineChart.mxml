@@ -189,9 +189,11 @@
   <controls:StylerInstance/>
 
   <data:ArrayCollectionFromUrl id="data" filterFunction="myFilter" postprocessRow="postprocess" url="http://media.juiceanalytics.com/ingenix/financial_data_new.csv"/>
-  <query:LiveQuery id="data2" dataProvider="{data.result}" query="{
+  <data:LiveQuery id="data2" dataProvider="{data.result}" query="{
     select({'Type': 'Type'}, {'Month': 'Month'}, {'paid': sum('Benefits Paid')}).groupby('Type', 'Month')
   }"/>
+  
+  <local:DataArrayCollection id="dac" source="data2" />
 
   <!--
        <data:Pivot dataProvider="{financialData_new.result}" dimensions="['Type','Month','MonthPaid','VendorNum','Vendor','Plan','Status']" id="data_new" pivotField="Month"/>
@@ -245,7 +247,7 @@
            seriesField="Type"
       -->
       <local:FlareLineChart id="lineChart" jkDataMouseOver="doMouseOver(event)"
-                            dataProvider="{data2result}" backgroundColor="red"
+                            dataProvider="{dac}" backgroundColor="red"
                             height="300" 
                             width="400"
                             borderColor="#ffffff"

@@ -11,7 +11,7 @@ package {
   
   import mx.collections.ArrayCollection;
   import mx.events.CollectionEvent;
-  import mx.events.PropertyChangeEvent;
+  import mx.utils.UIDUtil;
 
   /**
    *  The ArrayCollection class is a wrapper class that exposes an Array as
@@ -66,7 +66,22 @@ package {
       myBA.position = 0;
       return (myBA.readObject());
     }
+    
+    //----------------------------------
+    // dataProvider
+    //----------------------------------
 
+    public function set dataProvider(v:ArrayCollection):void {
+      source = v.source;
+      _dataProvider = v;
+    }
+
+
+    public function get dataProvider():ArrayCollection {
+      return _dataProvider;
+    }
+
+    private var _dataProvider:ArrayCollection = null;
 
     //-----------------------
     // key generation
@@ -149,6 +164,32 @@ package {
       return _keyLookup;
     }
 
+    /**
+    * Storage for the nodeLookup object
+    */
+    private var nodeLookup:Dictionary = new Dictionary();
+    
+    
+    /**
+    * When creating an additional data list, add respective 
+    * node lookups for the datalist in question.
+    * 
+    * Returns an Array of the added nodes
+    */
+    private function addNodeLookup(uid:String):Array {  //TODO: Why is this pointing at the data and not the node?
+      var result:Array = []
+      _data[uid].nodes.visit(function(d:DataSprite):void {
+        var key:String = createKey(d.data);
+        if (nodeLookup[key] === undefined) {
+          nodeLookup[key] = {(uid as String): d};
+        }
+        else {
+          nodeLookup[key][uid] = d;
+        }
+        result.push(d);
+      });
+      return result;
+    }
 
     //-----------------------
     // dataMode
@@ -242,12 +283,6 @@ package {
 		protected var _data:Object = {
 		  'default': new Data()
 		};
-		
-		/** Internal set of mapping from List objects to nodes in each Data */
-		protected var _nodeLookup:Object = {
-		  'default': new Dictionary(true)
-		}
-		
 
     /**
     * Storage for whether or not any of the 
@@ -264,6 +299,8 @@ package {
 		 * @param group the data list to add, if null a new,
 		 *  empty <code>DataList</code> instance will be created.
 		 * @return the added data group
+		 * 
+		 * This is hypothetically deprecated
 		 */
 		public function addData(name:String):Data
 		{
@@ -272,7 +309,6 @@ package {
 			}
 			var data:Data = new Data(false);
 			_data[name] = data;
-			_nodeLookup[name] = new Dictionary(false);
 			createNodesFromArrayCollection(name);
 			return data;
 		}
@@ -283,18 +319,28 @@ package {
 		 * @param name the name of the data to remove
 		 * @return the removed Flare Data object 
 		 */
-		public function removeData(name:String):Data
+		public function removeData(callingObject:Object):Data
 		{
-			if (name == "default") {
+		  var uid:String;
+		  if (callingObject is String) {
+        uid = callingObject as String;
+      }
+      else {
+        uid = UIDUtil.getUID(callingObject);
+      }
+      
+			if (uid == "default") {
 				throw new ArgumentError("Illegal data name. \"default\" is a reserved name.");
 			}
-			var data:Data = _data[name];
+			var data:Data = _data[uid];
+			//Todo: Clearout nodeLookup of the offending uid
 			if (data) { 
-			  delete _data[name];
-			  delete _nodeLookup[name];
+			  delete _data[uid];
 			}
 			return data;
 		}
+		
+		private var vorkl:Data;
 		
 		/**
 		 * Retrieves the data object with the given name.
@@ -305,18 +351,22 @@ package {
 		 * @param name the name of the data
 		 * @return the Flare Data object
 		 */
-		public function data(name:String='default'):Data
-		{
-			if (!_addedSyncListener) {
-			  this.addEventListener(CollectionEvent.COLLECTION_CHANGE, syncDataNodes);
-			  _addedSyncListener = true;
-			}
-
-		  if (!_defaultDataLoaded) {
-		    createNodesFromArrayCollection('default');
-		  }
-			return _data[name] as Data;
-		}
+    public function data(callingObject:Object):Data
+    {
+      var uid:String;
+      if (callingObject is String) {
+        uid = callingObject as String;
+      }
+      else {
+        uid = UIDUtil.getUID(callingObject);
+      }
+      
+      if (_data[uid] === undefined) {
+        createNodesFromArrayCollection(uid);
+      }
+      vorkl = _data[uid];
+      return _data[uid] as Data;
+    }
 		
 		/**
 		 * @private
@@ -326,41 +376,21 @@ package {
 		 * time.
 		 */
 		private function createNodesFromArrayCollection(name:String='default'):void {
+		  if (_data[name] === undefined) {
+		    _data[name] = new Data(); 
+		  }
 		  var data:Data = _data[name];
-		  if (data) {
 		    var row:Object;
 		    var node:NodeSprite;
 		    var idx:int = 0;
 		    var len:int = list.length;
-		    var lookup:Dictionary = _nodeLookup[name] as Dictionary;
+//		    var lookup:Dictionary = _nodeLookup[name] as Dictionary;
 		    for (idx=0; idx<len; idx++) {
 		      row = list.getItemAt(idx);
 		      node = data.addNode(list.getItemAt(idx));
-		      lookup[row] = node; 
 		    }
-		  }
 		}
 		
-
-		/**
-		 * Create and delete nodes that have been created in the ArrayCollection
-		 */
-		private function syncDataNodes(e:CollectionEvent):void {
-		  trace('syncing data nodes');
-		  for each (var evt:PropertyChangeEvent in e.items) {
-		    if (evt.kind == 'update') {
-		      for (var name:String in _data) {
-		        var d:Data = _data[name];
-		        var lookup:Dictionary = _nodeLookup[name];
-            d.nodes.clearStats('data.' + evt.property);
-            var node:NodeSprite = lookup[evt.source];
-            d.dispatchEvent(new flare.vis.events.DataEvent(DataEvent.UPDATE, node, d.nodes));
-		      }
-		    }
-		  }
-		  //TODO: Add nodes
-		  //TODO: Delete nodes
-		}
 		
 		/**
 		 * The 'default' data is loaded lazily. In most uses of <code>DataArrayCollection</data>,
@@ -389,10 +419,21 @@ package {
      *  @private
      */
     override public function set source(s:Array):void {
+      var uid:String;
       if (dataMode == DataArrayCollection.REPLACE || length == 0) {
         super.source = s;
+        nodeLookup = new Dictionary;
+        for (uid in _data) {
+          //Delete and recreate all the nodes in the accompanying lists
+          (_data[uid] as Data).clear();
+          createNodesFromArrayCollection(uid);
+          var createdNodeList:Array = addNodeLookup(uid);
+          _data[uid].dispatchEvent(new DataEvent(DataEvent.UPDATE, createdNodeList, _data[uid].nodes));
+        }
       } else if (dataMode == DataArrayCollection.MERGE || dataMode == DataArrayCollection.REPLACE_MERGE) {
         if (dataMode == DataArrayCollection.REPLACE_MERGE) {
+          //clonedKeyLookup keeps track of keys to delete from the
+          //final result
           var clonedKeyLookup:Object = cloneObj(keyLookup) as Object;
         }
         for each (var itm:Object in s) {          
@@ -411,11 +452,31 @@ package {
               if (v != oldv) {
                 existingItm[prop] = v;
                 list.itemUpdated(existingItm, prop, oldv, v);
+                //Launch an event for each updated node
+                for (uid in _data) {
+                  if (nodeLookup[k] !== undefined && nodeLookup[k][uid] !== undefined) {
+                    _data[uid].dispatchEvent(new DataEvent(DataEvent.UPDATE, nodeLookup[k][uid], _data[uid].nodes));
+                  } 
+                }
               }
             }
           } else {
             trace('key NO match', k);
             list.addItem(itm);
+            keyLookup[k] = itm;
+            //For each Datalist, create a new node and new node lookup
+            //TODO: launch node creation event
+            for (uid in _data) {
+              var n:NodeSprite = (_data[uid] as Data).addNode(itm);
+              if (nodeLookup[k] === undefined) {
+                nodeLookup[k] = {(uid as String): n};
+              }
+              else {
+                nodeLookup[k][uid] = n;
+              }    
+              _data[uid].dispatchEvent(new DataEvent(DataEvent.UPDATE, n, _data[uid].nodes));
+            }
+            
           }
         }
 
@@ -424,13 +485,20 @@ package {
         if (dataMode == DataArrayCollection.REPLACE_MERGE) {
           for (var idx:int=(list.length-1); idx>=0; idx--) {
             var deleteItm:Object = list.getItemAt(idx);
-            if (clonedKeyLookup[createKey(deleteItm)] != undefined) {
-              list.removeItemAt(idx);              
+            var deleteKey:String = createKey(deleteItm);
+            if (clonedKeyLookup[deleteKey] !== undefined) {
+              list.removeItemAt(idx);
+              //Delete the appropriate nodesprites from all related lists
+              if (nodeLookup[deleteKey] !== undefined) {
+                for(uid in nodeLookup[deleteKey]) {
+                  _data[uid].remove(nodeLookup[deleteKey][uid]);
+                }
+                delete nodeLookup[deleteKey];
+                delete keyLookup[deleteKey];
+              }
             }
           }
         }
-      } else if (dataMode == DataArrayCollection.REPLACE_MERGE) {
-
       }
     }
 

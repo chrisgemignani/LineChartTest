@@ -1,5 +1,4 @@
 package  {
-  import flare.scale.ScaleType;
   import flare.util.Maths;
   import flare.vis.data.Data;
   
@@ -23,17 +22,24 @@ package  {
       seriesField: setSeriesField
     }
     
+    override public function set dataProvider(value:Object):void
+    {
+        super.dataProvider = value;
+    }
+    
     private function setSeriesField(e:PropertyChangeEvent):void {
-      vis.data.createEdges(asFlareProperty(this.categoryEncodingField), asFlareProperty(seriesField));
+      vis.data.createEdges(this.categoryEncodingField, seriesField);
     }
     public var seriesField:String;
     override protected function styleVis():void {
       if (seriesField != null) {
-        vis.data.createEdges(asFlareProperty(categoryEncodingField), asFlareProperty(seriesField));        
+        vis.data.createEdges(categoryEncodingField, seriesField);   
+//        vis.data.createEdges(asFlareProperty(categoryEncodingField), asFlareProperty(seriesField));               
       }
     }
 
     public static function getTimeline(N:int, M:int):Data {
+      //not used
       var MAX:Number = 60;
       var t0:Date = new Date(1979, 5, 15);
       var t1:Date = new Date(1982, 2, 19);

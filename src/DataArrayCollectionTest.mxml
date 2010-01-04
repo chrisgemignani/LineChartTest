@@ -75,7 +75,7 @@
                             valueAxisShowLines="false"
                             valueEncodingField="data.pop"/>
                             
-     <local:FlareLineChart id="lineChartNew"
+     <local:FlareColumnChart id="lineChartNew"
                             dataArrayProvider="{d}"
                             height="300" 
                             width="400"
@@ -86,13 +86,13 @@
                             colorEncodingField="data.SEX"
                             lineColorField="data.SEX"
                             linePalette="Reds"
-                            lineWidth="5.0" seriesField="data.SEX"
-                            markerPalette="Blues"
-                            markerSize="1.0" valueAxisLabelFormat="0.0"
+                            lineWidth="3.0"
+                            markerPalette="Blues" 
+                            markerSize="2" valueAxisLabelFormat="0.0"
                             valueAxisShowLines="false"
-                            valueEncodingField="data.pop"/>
+                            valueEncodingField="data.pop"/> <!--seriesField="data.SEX"-->
   
   <mx:Button click="ud()" label="Change Data"/>
   <mx:Button click="uStates()" label="Change State Number"/>
-  <mx:Label text="{d.stats('b').average}"/>
+  <mx:Label text="{d.stats('pop').average}"/>
 </mx:Application>

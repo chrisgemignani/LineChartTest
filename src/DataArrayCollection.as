@@ -281,7 +281,6 @@ package {
 				
 		/** Internal set of data groups. */
 		protected var _data:Object = {
-		  'default': new Data()
 		};
 
     /**
@@ -292,32 +291,11 @@ package {
 		
 
 		/**
-		 * Adds a new Data object. If a Data object of the same name already exists,
-		 * it will be replaced, except for the data object named "default" 
-		 * which can not be replaced. 
-		 * @param name the name of the data to add
-		 * @param group the data list to add, if null a new,
-		 *  empty <code>DataList</code> instance will be created.
-		 * @return the added data group
-		 * 
-		 * This is hypothetically deprecated
-		 */
-		public function addData(name:String):Data
-		{
-			if (name == "default") {
-				throw new ArgumentError("Illegal data name. \"default\" is a reserved name.");
-			}
-			var data:Data = new Data(false);
-			_data[name] = data;
-			createNodesFromArrayCollection(name);
-			return data;
-		}
-		
-		/**
-		 * Removes a Data object. An error will be thrown if the caller
-		 * attempts to remove the data object "default". 
+		 * Removes a Data object. 
 		 * @param name the name of the data to remove
 		 * @return the removed Flare Data object 
+		 * 
+		 * untested
 		 */
 		public function removeData(callingObject:Object):Data
 		{
@@ -328,10 +306,6 @@ package {
       else {
         uid = UIDUtil.getUID(callingObject);
       }
-      
-			if (uid == "default") {
-				throw new ArgumentError("Illegal data name. \"default\" is a reserved name.");
-			}
 			var data:Data = _data[uid];
 			//Todo: Clearout nodeLookup of the offending uid
 			if (data) { 
@@ -340,13 +314,8 @@ package {
 			return data;
 		}
 		
-		private var vorkl:Data;
-		
 		/**
 		 * Retrieves the data object with the given name.
-		 * 
-		 * Create the default data object if it doesn't
-		 * already exist.
 		 *  
 		 * @param name the name of the data
 		 * @return the Flare Data object
@@ -364,7 +333,6 @@ package {
       if (_data[uid] === undefined) {
         createNodesFromArrayCollection(uid);
       }
-      vorkl = _data[uid];
       return _data[uid] as Data;
     }
 		
@@ -375,7 +343,7 @@ package {
 		 * sprites existing in the DataArrayCollection at this
 		 * time.
 		 */
-		private function createNodesFromArrayCollection(name:String='default'):void {
+		private function createNodesFromArrayCollection(name:String):void {
 		  if (_data[name] === undefined) {
 		    _data[name] = new Data(); 
 		  }
@@ -384,19 +352,12 @@ package {
 		    var node:NodeSprite;
 		    var idx:int = 0;
 		    var len:int = list.length;
-//		    var lookup:Dictionary = _nodeLookup[name] as Dictionary;
 		    for (idx=0; idx<len; idx++) {
 		      row = list.getItemAt(idx);
 		      node = data.addNode(list.getItemAt(idx));
 		    }
 		}
 		
-		
-		/**
-		 * The 'default' data is loaded lazily. In most uses of <code>DataArrayCollection</data>,
-		 * no <code>Data</code> object will be needed. 
-		 */
-    private var _defaultDataLoaded:Boolean = false;
 
     //-----------------------
     // source

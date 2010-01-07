@@ -8,6 +8,7 @@ package {
   
   import flash.utils.ByteArray;
   import flash.utils.Dictionary;
+  import flash.utils.getTimer;
   
   import mx.collections.ArrayCollection;
   import mx.events.CollectionEvent;
@@ -111,7 +112,7 @@ package {
         var result:Array = _keyProperties.map(function(prop:Property, index:int, array:Array):String {
           return prop.getValue(o).toString();
         })
-        trace('created key', result.join('#'));
+        //trace('created key', result.join('#'));
         return result.join('#');
       }
     }
@@ -158,7 +159,7 @@ package {
         for (var i:int=0; i<len; i++) {
           var itm:Object = this.list.getItemAt(i);
           _keyLookup[createKey(itm)] = itm;
-          trace('added key for ', createKey(itm));
+          //trace('added key for ', createKey(itm));
         }
       }
       return _keyLookup;
@@ -177,6 +178,7 @@ package {
     * Returns an Array of the added nodes
     */
     private function addNodeLookup(uid:String):Array {  //TODO: Why is this pointing at the data and not the node?
+      trace('addNodeLookup');
       var result:Array = []
       _data[uid].nodes.visit(function(d:DataSprite):void {
         var key:String = createKey(d.data);
@@ -191,10 +193,10 @@ package {
       return result;
     }
 
+
     //-----------------------
     // dataMode
     //-----------------------
-
 
     /**
      * Replace contents when <code>source</code> is set.
@@ -381,6 +383,13 @@ package {
      */
     override public function set source(s:Array):void {
       var uid:String;
+      if (s != null) {
+        trace('setting source for ', s.length, dataMode);
+      } else {
+        trace('setting source for null');
+      }
+      var starttime:Number = getTimer();
+      
       if (dataMode == DataArrayCollection.REPLACE || length == 0) {
         super.source = s;
         nodeLookup = new Dictionary;
@@ -397,12 +406,17 @@ package {
           //final result
           var clonedKeyLookup:Object = cloneObj(keyLookup) as Object;
         }
+        
+        var doDispatchDataUpdateEvent:Boolean = false;
+        var dispatchDataUpdateEventKey:String = '';
         for each (var itm:Object in s) {          
+          //trace('  --', (getTimer() - starttime).toString() + 'ms');
           var k:String = createKey(itm);
           if (keyLookup[k] !== undefined) {
             if (dataMode == DataArrayCollection.REPLACE_MERGE) {
               delete clonedKeyLookup[k];
             }
+            var st:Number = getTimer();
             var existingItm:Object = keyLookup[k];
             // copy the new object into the old object
             // performing ListCollectionView appropriate
@@ -413,16 +427,18 @@ package {
               if (v != oldv) {
                 existingItm[prop] = v;
                 list.itemUpdated(existingItm, prop, oldv, v);
+                
                 //Launch an event for each updated node
                 for (uid in _data) {
                   if (nodeLookup[k] !== undefined && nodeLookup[k][uid] !== undefined) {
-                    _data[uid].dispatchEvent(new DataEvent(DataEvent.UPDATE, nodeLookup[k][uid], _data[uid].nodes));
+                    //_data[uid].dispatchEvent(new DataEvent(DataEvent.UPDATE, nodeLookup[k][uid], _data[uid].nodes));
+                    doDispatchDataUpdateEvent = true;
+                    dispatchDataUpdateEventKey = k;
                   } 
                 }
               }
             }
           } else {
-            trace('key NO match', k);
             list.addItem(itm);
             keyLookup[k] = itm;
             //For each Datalist, create a new node and new node lookup
@@ -435,11 +451,27 @@ package {
               else {
                 nodeLookup[k][uid] = n;
               }    
-              _data[uid].dispatchEvent(new DataEvent(DataEvent.UPDATE, n, _data[uid].nodes));
+              //_data[uid].dispatchEvent(new DataEvent(DataEvent.UPDATE, n, _data[uid].nodes));
+              doDispatchDataUpdateEvent = true;
+              dispatchDataUpdateEventKey = k;
             }
             
           }
         }
+        
+        /**
+        * Limit the number of Flare DataEvents dispatched to a single
+        * event.
+        * 
+        * Dispatching an event for every change causes performance to 
+        * be very slow.
+        */
+        if (doDispatchDataUpdateEvent) {
+          for (uid in _data) {
+            _data[uid].dispatchEvent(new DataEvent(DataEvent.UPDATE, nodeLookup[dispatchDataUpdateEventKey][uid], _data[uid].nodes));
+          }
+        }
+        
 
         // if we're doing a replace merge, delete the items
         // that were not found in source    
@@ -461,6 +493,7 @@ package {
           }
         }
       }
+      trace('DataArrayCollection set source: ', (getTimer() - starttime).toString() + 'ms');
     }
 
 

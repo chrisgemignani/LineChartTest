@@ -32,13 +32,14 @@
   <data:ArrayCollectionFromUrl id="webAC" url="CENSUS_STATEAGESEX.csv"/>
 
   <data:Flatten id='stateList' dataProvider="{webAC.result}" dedup="true" property="STATE"/>
+  <data:Flatten id='ageList' dataProvider="{webAC.result}" dedup="true" property="AGE"/>
 
   <data:LiveQuery id="q2" dataProvider="{webAC.result}" query="{
     select('SEX',
            'AGE',
            {'pop': sum('POP2000') })
     .groupby('SEX', 'AGE')
-    .where(eq('STATE', _(stateCB.selectedItem)))
+    .where(and(eq('STATE', _(stateCB.selectedItem)),gt('AGE',_(ageCB.selectedItem))))
   }"/>
 
   <local:DataArrayCollection id="d" dataProvider="{q2.result}" keyVars="['SEX','AGE']"/>
@@ -51,6 +52,7 @@
   
 
   <mx:ComboBox id="stateCB" dataProvider="{stateList.result}"/>
+  <mx:ComboBox id="ageCB" dataProvider="{ageList.result}"/>
 
   <!-- 
     show some stats

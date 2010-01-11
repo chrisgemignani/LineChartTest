@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<mx:Application initialize="init()"
+<mx:Application creationComplete="creationComplete()"
                 layout="vertical"
                 xmlns:controls="org.juicekit.visual.controls.*"
                 xmlns:data="org.juicekit.util.data.*"
@@ -8,19 +8,65 @@
   <mx:Script>
     <![CDATA[
       import flare.util.Strings;
+      import flare.vis.data.Data;
       import mx.controls.Alert;
 
       import mx.events.CollectionEvent;
       import flare.vis.events.DataEvent;
+      import flare.vis.data.DataList;  
+      import org.juicekit.events.DataMouseEvent;    
 
       import flare.query.Query;
 
       import flare.query.methods.*;
+      import flare.vis.data.DataSprite;
+
+      import flare.vis.operator.encoder.PropertyEncoder;
+
+
+      public function creationComplete():void {
+        var selectedLines:DataList = new DataList('selectedLines');
+        lineChart.data.addGroup('selectedLines', selectedLines);
+        
+        lineChart.extraOperators.push(new PropertyEncoder({'lineColor': 0xA3A3A3, 'fillColor': 0xA3A3A3}, 'selectedLines'));
+        lineChart.createOperators();
+
+        lineChart.data.addEventListener(flare.vis.events.DataEvent.UPDATE, updateLineSelection);
+        
+        lineChart.addEventListener(DataMouseEvent.CLICK, function(e:DataMouseEvent):void {
+          if (matchValue != e.dataSprite.data[seriesField])
+            matchValue = e.dataSprite.data[seriesField];
+          else
+            matchValue = 'match_none';
+          updateLineSelection();
+          lineChart.updateData();
+        });
+        
+        updateLineSelection();
+
+      }
+      
+      public var matchValue:String = 'match_none';
+      public var seriesField:String = 'SEX';
+
+
+      public function updateLineSelection(e:flare.vis.events.DataEvent=null):void {
+        //Add edges to datalist
+        var selectedLines:DataList = new DataList('selectedLines');
+        lineChart.data.edges.visit(function(d:DataSprite):void {
+          if (d.data[seriesField].toString() != matchValue) {
+            selectedLines.add(d);
+          }
+          
+        lineChart.data.addGroup('selectedLines', selectedLines);
+        });
+
+      }
     ]]>
   </mx:Script>
 
   <controls:StylerInstance/>
-  
+
   <!--
        STATE,SEX,AGE,POP2000,POP2008
        Alabama,M,0,30479,32055
@@ -29,38 +75,38 @@
        Alabama,M,3,29932,31371
   -->
 
-  <data:ArrayCollectionFromUrl id="webAC" url="CENSUS_STATEAGESEX.csv"/>
+  <data:ArrayCollectionFromUrl id="webAC" url="CENSUS_STATEAGESEX2.csv"/>
 
-  <data:Flatten id='stateList' dataProvider="{webAC.result}" dedup="true" property="STATE"/>
+  <data:Flatten id='stateList' dataProvider="{webAC.result}" dedup="true" property="STATECODE"/>
   <data:Flatten id='ageList' dataProvider="{webAC.result}" dedup="true" property="AGE"/>
 
   <data:LiveQuery id="q2" dataProvider="{webAC.result}" query="{
-    select('SEX',
+    select('SEX', 'STATECODE',
            'AGE',
            {'pop': sum('POP2000') })
     .groupby('SEX', 'AGE')
-    .where(and(eq('STATE', _(stateCB.selectedItem)),gt('AGE',_(ageCB.selectedItem))))
+    .where(and(eq('STATECODE', _(stateCB.selectedItem)),gt('AGE',_(ageCB.selectedItem))))
   }"/>
 
   <local:DataArrayCollection id="d" dataProvider="{q2.result}" keyVars="['SEX','AGE']"/>
   <!--
-  DataArrayCollection does two things
-  
-  creates Flare Data objects for us and tracks them
-  creates stats objects
+       DataArrayCollection does two things
+
+       creates Flare Data objects for us and tracks them
+       creates stats objects
   -->
-  
+
 
   <mx:ComboBox id="stateCB" dataProvider="{stateList.result}"/>
   <mx:ComboBox id="ageCB" dataProvider="{ageList.result}"/>
 
-  <!-- 
-    show some stats
-    -->
+  <!--
+       show some stats
+  -->
   <mx:HBox>
     <mx:Label text="{q2.evalTime}"/>
     <!--
-    <mx:Label text="{Strings.format('{0:#,##0}', d.stats('pop').average)}"/>
+         <mx:Label text="{Strings.format('{0:#,##0}', d.stats('pop').average)}"/>
     -->
   </mx:HBox>
 
@@ -78,7 +124,7 @@
                         lineWidth="3.0"
                         markerPalette="Blues"
                         markerSize="0"
-                        seriesField="data.SEX"
+                        seriesField="{'data.' + seriesField}"
                         valueAxisLabelFormat="#,##0"
                         valueAxisShowLines="true"
                         valueEncodingField="data.pop"/>
@@ -102,5 +148,5 @@
                           valueAxisShowLines="false"
                           valueEncodingField="data.pop"/>
   <!--
-  -->                          
+  -->
 </mx:Application>

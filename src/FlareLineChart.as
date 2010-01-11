@@ -33,7 +33,7 @@ package  {
     public var seriesField:String;
     override protected function styleVis():void {
       if (seriesField != null) {
-        vis.data.createEdges(categoryEncodingField, seriesField);   
+        vis.data.createEdges(categoryEncodingField, seriesField, false, true);   
 //        vis.data.createEdges(asFlareProperty(categoryEncodingField), asFlareProperty(seriesField));               
       }
     }

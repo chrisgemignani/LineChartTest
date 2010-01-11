@@ -432,6 +432,9 @@ package {
                 for (uid in _data) {
                   if (nodeLookup[k] !== undefined && nodeLookup[k][uid] !== undefined) {
                     //_data[uid].dispatchEvent(new DataEvent(DataEvent.UPDATE, nodeLookup[k][uid], _data[uid].nodes));
+                    //Inform the dataList that the node has been updated.
+                    _data[uid].nodes.update(nodeLookup[k][uid]);
+                    
                     doDispatchDataUpdateEvent = true;
                     dispatchDataUpdateEventKey = k;
                   } 
@@ -459,18 +462,7 @@ package {
           }
         }
         
-        /**
-        * Limit the number of Flare DataEvents dispatched to a single
-        * event.
-        * 
-        * Dispatching an event for every change causes performance to 
-        * be very slow.
-        */
-        if (doDispatchDataUpdateEvent) {
-          for (uid in _data) {
-            _data[uid].dispatchEvent(new DataEvent(DataEvent.UPDATE, nodeLookup[dispatchDataUpdateEventKey][uid], _data[uid].nodes));
-          }
-        }
+
         
 
         // if we're doing a replace merge, delete the items
@@ -488,8 +480,24 @@ package {
                 }
                 delete nodeLookup[deleteKey];
                 delete keyLookup[deleteKey];
+                
+                doDispatchDataUpdateEvent = true;
+                dispatchDataUpdateEventKey = k;
               }
             }
+          }
+        }
+        
+        /**
+        * Limit the number of Flare DataEvents dispatched to a single
+        * event.
+        * 
+        * Dispatching an event for every change causes performance to 
+        * be very slow.
+        */
+        if (doDispatchDataUpdateEvent) {
+          for (uid in _data) {
+            _data[uid].dispatchEvent(new DataEvent(DataEvent.UPDATE, nodeLookup[dispatchDataUpdateEventKey][uid], _data[uid].nodes));
           }
         }
       }

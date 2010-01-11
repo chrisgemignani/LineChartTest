@@ -31,6 +31,7 @@ package {
     public function FlareVisBase() {
       super();
       //Our objects in our arrays may not be in the right form for the ChangeWatcher
+      //For some reason, this does not work -Sal
       ChangeWatcher.watch(this, 'baseOperators', createOperators);
       ChangeWatcher.watch(this, 'extraOperators', createOperators);
       ChangeWatcher.watch(this, 'baseControls', createControls);
@@ -176,7 +177,7 @@ package {
     * <p>Subclasses should place the base operators needed for 
     * the visualization in <code>baseOperators</code>.</p>
     */ 
-    protected function createOperators(e:*=null):void {      
+    public function createOperators(e:*=null):void {      
       vis.operators.clear();
       var op:Operator;
       for each (op in baseOperators) {
@@ -271,7 +272,7 @@ package {
     public var dataMode:String;
     public var performDataMatching:Boolean = false;
 
-    public function updateData(event:DataEvent):void {
+    public function updateData(event:DataEvent=null):void {
       styleNodes();
       styleEdges();
       styleVis(); 
